@@ -6,8 +6,13 @@ the app never enrols itself.
 ## Behaviour
 
 - A switch in the app window reads **the real OS registration**, not a stored guess.
-- Turning it on writes `~/Library/LaunchAgents/dev.sazonau.jira-to-qa-portal.plist`; turning it off
+- Turning it on writes `~/Library/LaunchAgents/jira-to-qa-portal.plist`; turning it off
   removes it.
+- **The agent is named after `productName`, not the bundle identifier.** The file is
+  `jira-to-qa-portal.plist` and the launchd label is `jira-to-qa-portal` — there is no
+  `dev.sazonau.` prefix anywhere in the registration, though the config directory does use the
+  identifier. Addressing it as `dev.sazonau.jira-to-qa-portal` gets "no such file or service",
+  which reads like a broken registration and is not one.
 - The entry appears under **System Settings → General → Login Items & Extensions → Allow in the
   Background**.
 - A login-item launch starts **hidden** — menu bar icon only, no window, no Dock icon.
@@ -100,8 +105,8 @@ value claiming something untrue.
 
 ```bash
 # After enabling the toggle
-plutil -p ~/Library/LaunchAgents/dev.sazonau.jira-to-qa-portal.plist
-launchctl print "gui/$(id -u)/dev.sazonau.jira-to-qa-portal"
+plutil -p ~/Library/LaunchAgents/jira-to-qa-portal.plist
+launchctl print "gui/$(id -u)/jira-to-qa-portal"
 
 # ProgramArguments must point at /Applications/..., not target/debug
 # and must include --hidden

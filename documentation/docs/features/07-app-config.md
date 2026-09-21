@@ -82,7 +82,7 @@ contained change: nothing outside it sees more than `load` and `save`.
 
 ```bash
 rm ~/Library/Application\ Support/dev.sazonau.jira-to-qa-portal/app-config.json
-rm ~/Library/LaunchAgents/dev.sazonau.jira-to-qa-portal.plist
+rm ~/Library/LaunchAgents/jira-to-qa-portal.plist
 ```
 
 The first resets both one-time notices and the stored autostart preference; the second removes the

@@ -13,11 +13,21 @@ cp -R "src-tauri/target/release/bundle/macos/jira-to-qa-portal.app" /Application
 open -a "/Applications/jira-to-qa-portal.app"
 ```
 
+Confirm you are not testing a bundle left re-signed from a performance session —
+[performance.md](performance.md#make-the-process-debuggable) grants `get-task-allow` so `leaks` can
+attach, and that is not what ships:
+
+```bash
+codesign -d --entitlements - /Applications/jira-to-qa-portal.app 2>&1 | tail -2
+```
+
+A single `Executable=…` line and no entitlements dict means the bundle is clean.
+
 Start from a clean state so the one-time notices and the fresh-install autostart path are exercised:
 
 ```bash
 rm ~/Library/Application\ Support/dev.sazonau.jira-to-qa-portal/app-config.json
-rm ~/Library/LaunchAgents/dev.sazonau.jira-to-qa-portal.plist
+rm ~/Library/LaunchAgents/jira-to-qa-portal.plist
 ```
 
 Handy throughout — the PID changes on every launch, so re-run it in each new shell:
@@ -36,13 +46,21 @@ Before any manual pass, these must be green:
 
 | ☐ | Check | Command | Expected |
 |---|---|---|---|
-| ☐ | Rust unit + integration tests | `cd src-tauri && cargo test` | 57 passed, 0 failed |
-| ☐ | Rust lint | `cd src-tauri && cargo clippy --all-targets -- -D warnings` | no warnings |
-| ☐ | UI tests | `cd ui && npm test` | 14 passed, 0 failed |
-| ☐ | UI type-check + build | `cd ui && npm run build` | succeeds |
-| ☐ | UI lint | `cd ui && npm run lint` | no errors |
-| ☐ | Dev run | `npm run tauri dev` | window opens, no panic in the log |
-| ☐ | Release bundle | `npm run tauri build` | `.app` and `.dmg` produced |
+| ✅ | Rust unit + integration tests | `cd src-tauri && cargo test` | 57 passed, 0 failed |
+| ✅ | Rust lint | `cd src-tauri && cargo clippy --all-targets -- -D warnings` | no warnings |
+| ✅ | UI tests | `cd ui && npm test` | 14 passed, 0 failed |
+| ✅ | UI type-check + build | `cd ui && npm run build` | succeeds |
+| ✅ | UI lint | `cd ui && npm run lint` | no errors |
+| ✅ | Dev run | `npm run tauri dev` | window opens, no panic in the log |
+| ✅ | Release bundle | `npm run tauri build` | `.app` and `.dmg` produced |
+
+**Run each command from the directory its row names**, and mind that `build` means one thing at the
+repo root (`tauri build`, the whole bundle) and another in `ui/` (`tsc -b && vite build`). The
+copy-paste version that cannot get this wrong, with expected output per step, is in
+[the README](../../README.md#testing).
+
+Last full pass: 2026-09-20, v0.1.0 — 57 Rust, 14 UI, clippy and oxlint clean, `.app` and `.dmg`
+produced.
 
 ---
 
@@ -52,15 +70,15 @@ Feature doc: [tray icon and menu](../docs/features/01-tray-icon.md)
 
 | ☐ | # | Check | Expected |
 |---|---|---|---|
-| ☐ | T1 | Launch the app | A tray icon appears in the menu bar |
-| ☐ | T2 | Left-click the tray icon | The menu opens with **Show Window**, a separator, **Quit** |
-| ☐ | T3 | Right-click the tray icon | The same menu opens |
-| ☐ | T4 | Choose **Show Window** while the window is visible | The window comes forward; no second window (check the Window menu / Mission Control) |
-| ☐ | T5 | Choose **Show Window** while hidden | The same window reappears with its prior state |
-| ☐ | T6 | Switch macOS to Dark appearance | The icon stays legible — it inverts, it does not disappear or turn into a dark blob |
-| ☐ | T7 | Switch back to Light appearance | Still legible |
-| ☐ | T8 | Move the window to an external display with a different scale factor | The tray icon is sharp, not blurry or doubled |
-| ☐ | T9 | Quit the app | The tray icon disappears immediately |
+| ✅ | T1 | Launch the app | A tray icon appears in the menu bar |
+| ✅ | T2 | Left-click the tray icon | The menu opens with **Show Window**, a separator, **Quit** |
+| ✅ | T3 | Right-click the tray icon | The same menu opens |
+| ✅ | T4 | Choose **Show Window** while the window is visible | The window comes forward; no second window (check the Window menu / Mission Control) |
+| ✅ | T5 | Choose **Show Window** while hidden | The same window reappears with its prior state |
+| ✅ | T6 | Switch macOS to Dark appearance | The icon stays legible — it inverts, it does not disappear or turn into a dark blob |
+| ✅ | T7 | Switch back to Light appearance | Still legible |
+| ✅ | T8 | Move the window to an external display with a different scale factor | The tray icon is sharp, not blurry or doubled |
+| ✅ | T9 | Quit the app | The tray icon disappears immediately |
 | ☐ | T10 | Simulate tray failure: temporarily rename `icons/trayTemplate@2x.png` and rebuild | The app still starts; the log carries `could not create the tray icon … Hide-to-tray is disabled`; the window shows the "closing quits" warning |
 
 > T10 is the only way to exercise the fallback path end to end. Restore the file afterwards.
@@ -73,16 +91,16 @@ Feature doc: [hide to tray](../docs/features/02-hide-to-tray.md)
 
 | ☐ | # | Check | Expected |
 |---|---|---|---|
-| ☐ | H1 | Click the red close button | The window disappears instantly — no minimise animation, nothing lands in the Dock |
-| ☐ | H2 | Immediately after H1 | The Dock icon is **gone** and the app is **not** in the ⌘-Tab switcher |
-| ☐ | H3 | Immediately after H1 | The tray icon is still present |
-| ☐ | H4 | `ps -p "$APP_PID"` after H1 | The process is still alive |
-| ☐ | H5 | Tray → Show Window | The Dock icon returns, the app is back in ⌘-Tab, the window is focused and in front of other apps |
-| ☐ | H6 | Check the window contents after H5 | Prior state intact — the same window, not a fresh one |
-| ☐ | H7 | Press ⌘W with the window focused | Same as H1: hides, does not quit |
-| ☐ | H8 | Click the "Hide to menu bar" button in the window | Same as H1 |
-| ☐ | H9 | Hide, then show, 5 times in a row quickly | Never more than one window; the window always ends up focused and in front |
-| ☐ | H10 | Hide, then check `ps -ax \| grep WebContent` | The WebKit helper is retained, as documented. Record the number of processes |
+| ✅ | H1 | Click the red close button | The window disappears instantly — no minimise animation, nothing lands in the Dock |
+| ✅ | H2 | Immediately after H1 | The Dock icon is **gone** and the app is **not** in the ⌘-Tab switcher |
+| ✅ | H3 | Immediately after H1 | The tray icon is still present |
+| ✅ | H4 | `ps -p "$APP_PID"` after H1 | The process is still alive |
+| ✅ | H5 | Tray → Show Window | The Dock icon returns, the app is back in ⌘-Tab, the window is focused and in front of other apps |
+| ✅ | H6 | Check the window contents after H5 | Prior state intact — the same window, not a fresh one |
+| ✅ | H7 | Press ⌘W with the window focused | Same as H1: hides, does not quit |
+| ✅ | H8 | Click the "Hide to menu bar" button in the window | Same as H1 |
+| ✅ | H9 | Hide, then show, 5 times in a row quickly | Never more than one window; the window always ends up focused and in front |
+| ✅ | H10 | Hide, then check `ps -ax \| grep WebContent` | The WebKit helper is retained, as documented. Record the number of processes — **3 helpers (WebContent, GPU, Networking), 45 MB retained while hidden**; see [performance.md §3](performance.md#3-process-accounting--the-webview-is-the-bigger-half) |
 
 ---
 
@@ -115,10 +133,10 @@ Feature doc: [launch at login](../docs/features/04-launch-at-login.md)
 | ☐ | # | Check | Expected |
 |---|---|---|---|
 | ☐ | A1 | Fresh install, first launch | The toggle reads **off**; no plist in `~/Library/LaunchAgents/` |
-| ☐ | A2 | Turn the toggle **on** | `~/Library/LaunchAgents/dev.sazonau.jira-to-qa-portal.plist` appears |
+| ☐ | A2 | Turn the toggle **on** | `~/Library/LaunchAgents/jira-to-qa-portal.plist` appears |
 | ☐ | A3 | `plutil -p` that plist | `ProgramArguments` points at `/Applications/…`, **not** `target/debug`, and includes `--hidden` |
 | ☐ | A4 | System Settings → General → Login Items & Extensions | The app is listed under **Allow in the Background** (not *Open at Login*) |
-| ☐ | A5 | `launchctl print "gui/$(id -u)/dev.sazonau.jira-to-qa-portal"` | The job is loaded |
+| ☐ | A5 | `launchctl print "gui/$(id -u)/jira-to-qa-portal"` | The job is loaded |
 | ☐ | A6 | Quit and relaunch with the toggle on | The toggle still reads **on**; exactly one plist, not two |
 | ☐ | A7 | Log out and back in (or reboot) | The app starts automatically |
 | ☐ | A8 | Immediately after A7 | It started **hidden**: tray icon present, no window, no Dock icon |

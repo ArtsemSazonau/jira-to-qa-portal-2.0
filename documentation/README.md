@@ -9,7 +9,8 @@ documentation/
 │   └── features/            one document per feature
 └── tests/
     ├── functional-checklist.md   manual checks, ordered by module
-    └── performance.md            performance, load and stability scenarios
+    ├── performance.md            performance, load and stability scenarios
+    └── automation-notes.md       what could be automated next, and what it would cost
 ```
 
 ## Start here
@@ -20,6 +21,8 @@ documentation/
   the lifecycle.
 - **[tests/performance.md](tests/performance.md)** — before and after any change to the core
   process, so the idle baseline stays honest.
+- **[tests/automation-notes.md](tests/automation-notes.md)** — when picking up test work, rather
+  than before a release.
 
 ## Features
 

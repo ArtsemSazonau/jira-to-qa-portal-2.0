@@ -19,6 +19,11 @@ cd src-tauri && cargo test     # 57 Rust tests
 cd ui && npm test              # 14 UI tests
 ```
 
+The full automated suite — five commands, expected output per step — is in
+[README.md](README.md#testing). Run it from there rather than assembling it from memory: `build`
+means `tauri build` at the root and `tsc -b && vite build` in `ui/`, and there is no root `lint`
+script, so a half-remembered sequence silently runs the wrong thing.
+
 `npm run tauri build` produces a release bundle. Root `package.json` only holds the Tauri
 CLI + scripts; the frontend's own dependencies live in `ui/package.json`.
 

@@ -79,11 +79,48 @@ machine's network setup.
 
 ### Testing
 
+The whole automated suite, from the repo root. Each step runs in its own subshell so the working
+directory cannot drift between them, and `&&` stops at the first failure:
+
 ```bash
-cd src-tauri && cargo test     # 57 tests: pure policy, config, and integration
-cd ui && npm test              # 14 tests: the IPC wrappers and the settings panel
-cd src-tauri && cargo clippy --all-targets -- -D warnings
+(cd src-tauri && cargo test) \
+  && (cd src-tauri && cargo clippy --all-targets -- -D warnings) \
+  && (cd ui && npm test) \
+  && (cd ui && npm run build) \
+  && (cd ui && npm run lint) \
+  && echo "=== all green ==="
 ```
+
+| Step | Covers | Expected |
+|---|---|---|
+| `cargo test` | policy decisions, config, lifecycle state, integration | 42 unit + 15 integration = **57 passed** |
+| `cargo clippy --all-targets -- -D warnings` | the test targets too | nothing but `Finished` |
+| `npm test` (ui) | IPC wrappers and the settings panel, vitest in jsdom | **14 passed** across 2 files |
+| `npm run build` (ui) | `tsc -b && vite build`; type-checks all of `src`, tests included | `built in …` |
+| `npm run lint` (ui) | oxlint | `Found 0 warnings and 0 errors` |
+
+About two minutes cold, seconds warm. Almost all of it is `cargo` building the test and clippy
+targets, which are separate artefacts from a normal build.
+
+> **`build` means two different things here.** At the repo root `npm run build` is `tauri build` —
+> the full release bundle, minutes. The one this suite wants is `ui/`'s, `tsc -b && vite build`,
+> under a second. And there is no `lint` script at the root at all. Hence the subshells.
+
+**Nothing runs these on its own.** There is no CI in this repo, and no build command runs a test:
+Rust drops `#[cfg(test)]` code from a normal build entirely, and `tauri build` only calls
+`tsc -b && vite build` for the frontend. A green build means the tests *compile*, not that they
+pass. [documentation/tests/automation-notes.md](documentation/tests/automation-notes.md) covers what
+to do about that.
+
+The two interactive steps run separately, from the root:
+
+```bash
+npm run tauri dev      # window opens; log carries `tray icon created` and no panic
+npm run tauri build    # produces the .app and the .dmg
+```
+
+In `tauri dev` the window's close button **hides the app to the tray** rather than stopping the dev
+server — that is the feature working, not a hang. Stop it with Ctrl-C in the terminal, or ⌘Q.
 
 Manual and performance checks — which cannot be automated, because they involve the menu bar, the
 Dock and a reboot — are in [documentation/tests/](documentation/tests/).
@@ -121,7 +158,7 @@ Toggled in the app window. Registration uses `tauri-plugin-autostart` with
 `MacosLauncher::LaunchAgent`, which writes:
 
 ```
-~/Library/LaunchAgents/dev.sazonau.jira-to-qa-portal.plist
+~/Library/LaunchAgents/jira-to-qa-portal.plist
 ```
 
 It appears in **System Settings → General → Login Items & Extensions → Allow in the Background**
@@ -174,8 +211,8 @@ pgrep -fl "jira-to-qa-portal.app/Contents/MacOS"
 
 # Web inspector: right-click in the window (enabled in debug builds)
 # Login item state
-plutil -p ~/Library/LaunchAgents/dev.sazonau.jira-to-qa-portal.plist
-launchctl print "gui/$(id -u)/dev.sazonau.jira-to-qa-portal"
+plutil -p ~/Library/LaunchAgents/jira-to-qa-portal.plist
+launchctl print "gui/$(id -u)/jira-to-qa-portal"
 ```
 
 ### Things that behave differently in `tauri dev`
@@ -190,7 +227,7 @@ Test these against a `tauri build` bundle installed in `/Applications`, never a 
 
 ```bash
 rm ~/Library/Application\ Support/dev.sazonau.jira-to-qa-portal/app-config.json
-rm ~/Library/LaunchAgents/dev.sazonau.jira-to-qa-portal.plist
+rm ~/Library/LaunchAgents/jira-to-qa-portal.plist
 ```
 
 ---
