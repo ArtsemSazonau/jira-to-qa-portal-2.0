@@ -264,6 +264,26 @@ is retained indefinitely.
 The helpers together cost **more than the Rust core**. Any memory optimisation effort belongs here,
 not in Rust.
 
+### Does closing release them? — the measurement that gates the planned change
+
+Destroying the window on close instead of hiding it is
+[planned](../docs/features/02-hide-to-tray.md#planned-change-destroy-the-window-instead-of-hiding-it),
+and its entire justification rests on this one question. WebKit pools helper processes so a later
+load is fast, so they may well outlive the view that spawned them.
+
+Run it before any of that design work starts:
+
+```bash
+for p in $WK_PIDS; do ps -p $p -o pid=,comm= ; done   # three, window open
+# close the window
+sleep 60
+for p in $WK_PIDS; do ps -p $p -o pid=,comm= ; done
+```
+
+Today this returns all three either way, because hiding keeps the window alive. It becomes
+meaningful the moment a build actually closes the window — and if the helpers survive that, the
+change saves nothing and should not be built.
+
 ### `ps rss` is not comparable to `footprint`
 
 Cycle tests below use `ps -o rss=` because it is cheap to call in a loop. It reports every resident
@@ -731,9 +751,15 @@ macOS 26.6.2 (25G83).
 | 7 | Orphans after 20 launch/quit | 0 | **0 / 20** | ✅ |
 | 7 | Open file descriptors while idle | record | **28 total** — core 10, Networking 9, GPU 6, WebContent 3 | ✅ |
 | 8 | Login-item plist path | `/Applications/…` | **`/Applications/…/MacOS/app --hidden`**, `RunAtLoad` true; off removes the file, on recreates it | ✅ |
-| 8 | Time from login to tray ready | no visible delay | not yet run | ☐ |
-| 9 | Survives 1h sleep | yes | not yet run | ☐ |
-| 10 | Frontend JS heap growth | no growth | not yet run | ☐ |
+| 8 | Time from login to tray ready | no visible delay | **deferred** — needs a reboot; run it with checklist A7–A9 | ⏳ |
+| 9 | Survives 1h sleep | yes | **deferred** — needs an hour of sleep; run it with checklist X1–X2 | ⏳ |
+| 10 | Frontend JS heap growth | no growth | **deferred** — moot for the closed state if the webview is destroyed on close ([planned](../docs/features/02-hide-to-tray.md#planned-change-destroy-the-window-instead-of-hiding-it)); still applies while the window is open | ⏳ |
+
+✅ passed · ⏳ deferred, needs a reboot or a long wait · ☐ not run
+
+The two deferred rows are the only ones that cannot be finished in a sitting. Pair them with the
+functional check-list rather than scheduling a separate pass: a single reboot closes both this table's
+login-time row and A7–A9, and a single hour of sleep closes both the sleep row and X1–X2.
 
 ## Known costs to carry forward
 
@@ -741,6 +767,9 @@ Note these alongside the numbers, so a future comparison is not surprised by the
 
 - **The webview is 62% of the idle footprint.** 45 MB across three helper processes against 28 MB for
   the Rust core. Hiding the window shrinks them to about a third of their peak but never frees them.
+  This is the cost that
+  [destroying the window on close](../docs/features/02-hide-to-tray.md#planned-change-destroy-the-window-instead-of-hiding-it)
+  is meant to remove — a planned change, gated on the measurement in scenario 3.
   Any memory work belongs here; the Rust side has nothing worth optimising.
 - **The Rust core is not "just Rust".** It links AppKit, WebKit, Carbon, CoreGraphics and CoreVideo,
   so its floor is a full Cocoa application's, not a daemon's. Of its 26 MB dirty, 9 MB is live

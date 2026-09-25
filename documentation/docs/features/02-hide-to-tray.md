@@ -72,11 +72,29 @@ outcome lets the close proceed — which is what keeps ⌘Q working, see
 
 ## Does hiding release the webview?
 
-No. Tauri does not tear down the WKWebView when a window is hidden, so the WebKit content and
-networking helper processes stay alive and keep their memory. That is a known, measured cost rather
-than a bug — record it with
-[the process accounting step](../../tests/performance.md#3-process-accounting) and treat a large
-number as a follow-up item, not a blocker.
+No. Tauri does not tear down the WKWebView when a window is hidden, so the WebKit content, GPU and
+networking helper processes stay alive and keep their memory.
+
+Measured, with the window hidden and the app settled:
+
+| | Footprint | Peak |
+|---|---|---|
+| `app` (Rust core) | 28 MB | 29 MB |
+| `WebKit.WebContent` | 29 MB | 44 MB |
+| `WebKit.GPU` | 11 MB | 62 MB |
+| `WebKit.Networking` | 4.8 MB | 5.2 MB |
+| **Total idle** | **≈ 73 MB** | |
+
+Hiding does shrink the helpers — to roughly a third of their peak — but never frees them. **The
+webview is 62% of the idle footprint**, held for as long as the app sits in the menu bar.
+
+That is now judged too expensive for a window opened about once a day, so the intended behaviour is
+to **destroy the window on close and rebuild it on show**. See
+[the planned change](#planned-change-destroy-the-window-instead-of-hiding-it) below and the backlog
+item in [PLAN.md](../../../PLAN.md) §4. Until that ships, the retention above is the documented
+behaviour, and
+[the process accounting step](../../tests/performance.md#3-process-accounting--the-webview-is-the-bigger-half)
+is how it is re-measured.
 
 ## Edge cases handled
 
@@ -109,3 +127,81 @@ Manual checks are in
 [the functional checklist](../../tests/functional-checklist.md#module-lifecyclemacosrs--hideshow);
 the 50-cycle show/hide leak test is
 [performance scenario 5](../../tests/performance.md#5-showhide-cycle-leak-test-50-cycles).
+
+---
+
+## Planned change: destroy the window instead of hiding it
+
+**Not implemented.** Everything above describes current behaviour. This section is the design note
+for the backlog item in [PLAN.md](../../../PLAN.md) §4, written while the measurements were fresh.
+
+### Why
+
+The window is expected to be opened roughly once a day. Holding 45 MB of WebKit helpers for the
+other 23 hours and 59 minutes contradicts the principle the whole architecture is built on — heavy
+work in short-lived processes, an idle core otherwise. Destroying on close should bring the idle
+footprint from ~73 MB to ~30 MB.
+
+A closed webview also cannot leak, which removes the entire concern behind
+[performance scenario 10](../../tests/performance.md#10-frontend-profiling--the-62-nobody-was-measuring)
+for the closed state. It still applies while the window is open.
+
+### The precondition that decides whether this is worth doing
+
+WebKit pools and caches its helper processes so a subsequent load is fast. **If they survive
+`window.close()`, this change buys nothing.** Measure before writing any code:
+
+```bash
+# window open, helpers discovered as in performance.md
+for p in $WK_PIDS; do ps -p $p -o pid=,comm= ; done   # three processes
+# close the window, then
+sleep 60
+for p in $WK_PIDS; do ps -p $p -o pid=,comm= ; done   # still three? then stop here
+```
+
+### What it costs
+
+- **Reopen is no longer instant.** Building a WKWebView, loading the bundle and mounting React
+  replaces an `orderIn:`. Hundreds of milliseconds instead of none — acceptable at once a day,
+  noticeable on a tray click.
+- **Frontend state is discarded.** Nothing is lost today: `App.tsx` reads everything from the
+  backend on mount. It matters once the report views in PLAN.md §4 land — someone reading a report,
+  closing the window and reopening should not land back at the top. The right answer is likely to
+  keep view state in Rust rather than to keep the webview alive.
+- **Window geometry is lost** unless persisted. Every open would be a fresh 800×600 in the centre.
+  `tauri-plugin-window-state` exists for this.
+
+### Edge cases this introduces
+
+The current design assumes the window always exists. These are the places that assumption is load-bearing:
+
+| Case | What has to change |
+|---|---|
+| Tray clicked twice while the window is still being built | `WebviewWindowBuilder::build()` fails on a taken label. Needs a third state beyond visible/hidden — "creating" — or an idempotent build |
+| `Action::ShowAndFocus` | [`macos.rs`](../../../src-tauri/src/lifecycle/macos.rs) currently logs a warning when `get_webview_window()` returns `None`. That becomes the construction path |
+| `LifecycleState.window_visible` | One boolean is no longer enough. Either add `window_exists`, or replace both with `WindowState { Absent, Creating, Hidden, Visible }` |
+| ⌘Q with no window open | `ExitRequested` still fires and sets `is_quitting`, but the `AllowClose` branch never runs — there is nothing to close. Should work; it is a new path and needs a test |
+| `RunEvent::Reopen`, single instance | Both resolve to `ShowAndFocus` today, which will now sometimes mean "construct" |
+| Webview construction fails | A failure mode that does not exist today. Unlike a tray failure it is recoverable — the tray is still there to try again — but it must be logged and must not leave the app wedged |
+| Activation-policy ordering | `Regular` is set *before* the window appears, or it opens behind other apps. The gap between the flip and the window becoming visible gets longer |
+| First-close notification | Fired from `hide()` today; moves to the close path |
+
+The existing **"no tray → the close button quits"** rule stays correct and stays necessary. It was
+written about exactly the state this change enters deliberately: a live process with no window.
+
+### Files it would touch
+
+| File | Change |
+|---|---|
+| `src-tauri/src/lifecycle/policy.rs` | Window state representation, a new `Action`, the `WindowCloseRequested` branch, tests for every new combination |
+| `src-tauri/src/lifecycle/macos.rs` | `hide` becomes destroy; `show` learns to build; double-create guard |
+| `src-tauri/src/lifecycle/mod.rs` | `AppState` gains the second flag or the atomic enum |
+| `src-tauri/src/lib.rs` | `on_window_event` stops calling `prevent_close()` on the hide path |
+| `src-tauri/src/ipc_commands.rs` | `hide_main_window` — a good moment to move its `if` into the policy, as [automation-notes](../../tests/automation-notes.md) flags |
+| `src-tauri/tauri.conf.json` | The window block becomes a template for reconstruction |
+| `ui/` | No change |
+
+Tests and docs that change with it: `tests/lifecycle_policy.rs`, the H-series in the functional
+checklist (H4, H5 and H6 invert), performance scenarios 3 and 5 — scenario 5 stops being "memory
+returns to baseline" and becomes "reconstruction stays under N ms" — and the decisions table in
+[CLAUDE.md](../../../CLAUDE.md).

@@ -116,6 +116,15 @@ These resolved open questions or deviated from PLAN.md. Do not re-open them with
 | Hiding drops to `ActivationPolicy::Accessory` | staying `Regular` | Confirmed in the spec's open questions. The consequence: the tray is the only way back in, which is what the no-tray fallback above exists to handle. |
 | `tauri-plugin-single-instance` **and** `RunEvent::Reopen` | either alone | They cover different paths. macOS activates an already-running app rather than starting a second process, so single-instance never fires for a Finder/Spotlight relaunch. |
 
+**One of these is expected to change.** Hiding retains the webview — 45 MB across three WebKit
+helpers, 62% of the idle footprint — for a window opened about once a day, so closing it is planned
+to **destroy** the window and show is planned to rebuild it. Not implemented, and gated on measuring
+whether WebKit actually releases the helper processes. The design note, the edge cases it introduces
+and the files it touches are the last section of
+[documentation/docs/features/02-hide-to-tray.md](documentation/docs/features/02-hide-to-tray.md);
+the backlog item is [PLAN.md](PLAN.md#4-фичи) §4. Until it ships, everything in the table above
+holds — including "no tray → the close button quits", which stays correct either way.
+
 ## Conventions
 
 - Planning docs (PLAN.md) are written in Russian; **code, comments and documentation are in
