@@ -134,6 +134,12 @@ holds — including "no tray → the close button quits", which stays correct ei
   keeps the code testable.
 - TypeScript: the UI never calls `invoke` directly. Every command goes through a typed wrapper in
   `ui/src/lib/ipc.ts`.
+- **The webview is disposable.** Frontend state that has to survive the window closing lives in
+  Rust, not in React — read it back on mount, as `App.tsx` already does for the autostart toggle.
+  React state is for what is on screen right now. This keeps the door open to destroying the window
+  on close instead of hiding it (planned; see
+  [02-hide-to-tray.md](documentation/docs/features/02-hide-to-tray.md)), and the cost of following
+  it is close to zero *before* the schedule editor and the report views exist.
 - Platform-specific code is behind `#[cfg(target_os = "macos")]` so a Windows/Linux build is
   additive rather than a rewrite.
 - Tests: pure logic gets unit tests; anything needing a live window, the menu bar or a reboot goes
