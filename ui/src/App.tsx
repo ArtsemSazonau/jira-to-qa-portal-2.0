@@ -1,121 +1,130 @@
-import { useState } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
+import { useEffect, useState } from 'react'
+import {
+  getAutostartEnabled,
+  getTrayAvailable,
+  hideMainWindow,
+  setAutostartEnabled,
+} from './lib/ipc'
 import './App.css'
 
+type LoadState = 'loading' | 'ready' | 'unavailable'
+
+/**
+ * The settings panel. One toggle for now; this is where the sync schedule,
+ * credentials and platform mappings land as PLAN.md §4 works through the MVP.
+ */
 function App() {
-  const [count, setCount] = useState(0)
+  const [loadState, setLoadState] = useState<LoadState>('loading')
+  const [autostart, setAutostart] = useState(false)
+  const [trayAvailable, setTrayAvailable] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+
+  // Read the real registration on mount rather than trusting a stored value —
+  // the user can add or remove the login item in System Settings behind the
+  // app's back.
+  useEffect(() => {
+    let cancelled = false
+
+    Promise.all([getAutostartEnabled(), getTrayAvailable()])
+      .then(([enabled, hasTray]) => {
+        if (cancelled) return
+        setAutostart(enabled)
+        setTrayAvailable(hasTray)
+        setLoadState('ready')
+      })
+      .catch((cause: unknown) => {
+        if (cancelled) return
+        // Running the frontend outside Tauri (plain `vite dev`) has no backend
+        // to answer, so the panel says so instead of showing a dead toggle.
+        setError(String(cause))
+        setLoadState('unavailable')
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  async function onToggle(next: boolean) {
+    setSaving(true)
+    setError(null)
+    // Optimistic, then reconciled against what the OS actually did — a failed
+    // registration must not leave the toggle claiming something untrue.
+    setAutostart(next)
+    try {
+      await setAutostartEnabled(next)
+      setAutostart(await getAutostartEnabled())
+    } catch (cause: unknown) {
+      setError(String(cause))
+      setAutostart(!next)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
+    <main className="settings">
+      <header>
+        <h1>QA Portal Sync</h1>
+        <p className="subtitle">
+          Keeps running in the menu bar so scheduled syncs can continue.
+        </p>
+      </header>
+
+      <section className="panel">
+        <div className="row">
+          <div className="row-text">
+            <label htmlFor="autostart">Launch at login</label>
+            <p className="hint">
+              Start automatically when you log in to macOS, hidden in the menu
+              bar.
+            </p>
+          </div>
+          <input
+            id="autostart"
+            type="checkbox"
+            role="switch"
+            className="switch"
+            checked={autostart}
+            disabled={loadState !== 'ready' || saving}
+            onChange={(event) => void onToggle(event.currentTarget.checked)}
+          />
         </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
+      </section>
+
+      {loadState === 'unavailable' && (
+        <p className="notice" role="status">
+          The desktop backend is not available. Run the app with{' '}
+          <code>npm run tauri dev</code>.
+        </p>
+      )}
+
+      {error && loadState === 'ready' && (
+        <p className="notice error" role="alert">
+          {error}
+        </p>
+      )}
+
+      {loadState === 'ready' && !trayAvailable && (
+        <p className="notice error" role="alert">
+          The menu bar icon could not be created, so closing this window quits
+          the app instead of hiding it.
+        </p>
+      )}
+
+      {loadState === 'ready' && trayAvailable && (
+        <footer>
+          <button type="button" className="ghost" onClick={() => void hideMainWindow()}>
+            Hide to menu bar
+          </button>
+          <p className="hint">
+            Closing this window hides it too. Use Quit in the menu bar icon, or
+            ⌘Q, to exit.
           </p>
-        </div>
-        <button
-          type="button"
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
-
-      <div className="ticks"></div>
-
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
-
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+        </footer>
+      )}
+    </main>
   )
 }
 
