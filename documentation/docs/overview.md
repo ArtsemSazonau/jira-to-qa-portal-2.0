@@ -49,14 +49,16 @@ an `Action`; adding an event means adding a `Trigger`. Nothing else branches.
 
 ## Not implemented yet
 
-Tracked in [PLAN.md §4](../../PLAN.md#4-фичи):
+Tracked in [PLAN.md §4](../../PLAN.md#4-фичи), roughly in the order they are planned:
 
-- Credential storage (`keyring-rs` → macOS Keychain)
-- Jira REST client and ticket fetching
+- The credentials window (`keyring-rs` → macOS Keychain)
+- Jira REST client in the Rust core (`reqwest`) and ticket fetching
 - The QA Portal Playwright sidecar and the sync itself
-- The scheduler (`tokio-cron-scheduler`) — this feature exists to give it a process to live in
-- Manual "Run now" from the tray, sync status and log viewing
-- LLM report generation (Ollama)
+- The scheduler (`tokio-cron-scheduler`) — this feature exists to give it a process to live in —
+  with manual "Run now" from the tray, sync status and log viewing
+- CI on GitHub Actions: tests on every push, bundle builds
+- Time entry into the internal time tracker, with calendar review (draft)
+- LLM report generation (Ollama) — later
 
 ## Test coverage
 

@@ -1,7 +1,8 @@
 //! Launch at login.
 //!
 //! Uses `tauri-plugin-autostart` with [`MacosLauncher::LaunchAgent`], which
-//! writes `~/Library/LaunchAgents/<bundle-id>.plist`. That mechanism needs no
+//! writes `~/Library/LaunchAgents/<productName>.plist` (here
+//! `jira-to-qa-portal.plist`, not the bundle id). That mechanism needs no
 //! Automation permission prompt; the entry shows up under System Settings →
 //! General → Login Items & Extensions → **Allow in the Background** (not *Open
 //! at Login*, which is where the AppleScript launcher would put it).

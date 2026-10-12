@@ -4,8 +4,8 @@
 //! `tauri.conf.json` on purpose: a config-declared tray is created inside
 //! `App::build`, where a failure aborts startup. The spec requires the opposite
 //! — tray creation failure must be survivable — so it is built inside `setup`,
-//! where the error is catchable and the app can fall back to being an ordinary
-//! closable window.
+//! where the error is catchable and the app can fall back to quitting when its
+//! window is closed, instead of hiding somewhere the user cannot reach it.
 //!
 //! The menu deliberately carries a **Show Window** item as well as **Quit**.
 //! With `show_menu_on_left_click`, a left or right click opens the menu, so the
@@ -43,8 +43,8 @@ fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
 ///
 /// On success the caller must mark the tray available in [`AppState`]; on
 /// failure it must leave it unavailable, which is what makes
-/// [`policy::decide`] fall back to a normal window close instead of hiding the
-/// app somewhere the user cannot reach it.
+/// [`policy::decide`] quit the app on a window close instead of hiding it
+/// somewhere the user cannot reach it.
 pub fn create(app: &AppHandle) -> tauri::Result<TrayIcon<Wry>> {
     let menu = build_menu(app)?;
 
@@ -80,10 +80,10 @@ pub fn install(app: &AppHandle) {
         Err(err) => {
             // The consequence, spelled out because it is not obvious: without a
             // tray there is no way back into a hidden Accessory app, so
-            // hide-to-tray turns itself off and the window stays closable.
+            // hide-to-tray turns itself off and closing the window quits.
             log::error!(
                 "could not create the tray icon: {err}. \
-                 Hide-to-tray is disabled; the window will close normally."
+                 Hide-to-tray is disabled; closing the window will quit the app."
             );
             app.state::<AppState>().set_tray_available(false);
         }

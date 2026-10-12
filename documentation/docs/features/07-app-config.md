@@ -67,7 +67,7 @@ the file or churn the disk.
 
 ## Why not `tauri-plugin-store`
 
-PLAN.md §2 names `tauri-plugin-store`. **This is a deliberate deviation.**
+PLAN.md §2 originally named `tauri-plugin-store`. **This is a deliberate deviation.**
 
 The spec requires a unit test for "reading with no store present returns the documented default
 (off)". A `tauri-plugin-store` store is reached through `AppHandle`, so that test would need

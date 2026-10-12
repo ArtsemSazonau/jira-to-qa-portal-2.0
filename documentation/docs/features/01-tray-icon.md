@@ -87,7 +87,7 @@ If `TrayIconBuilder::build` fails, the app does not panic and does not abort sta
 
 ```
 ERROR could not create the tray icon: <cause>. Hide-to-tray is disabled;
-      the window will close normally.
+      closing the window will quit the app.
 ```
 
 The UI reads `get_tray_available` and replaces the "Hide to menu bar" button with an explanation, so

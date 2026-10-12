@@ -1,8 +1,9 @@
 # src-tauri — Tauri backend
 
-Rust core: app lifecycle, tray, IPC, and (later) the scheduler, Jira client, sidecar bridge and LLM
-report generation. **This file covers the backend only.** The frontend has its own conventions;
-nothing here applies to `ui/`.
+Rust core: app lifecycle, tray, IPC, and — planned — the scheduler, the Jira client, the sidecar
+bridge, the timesheet module and the credentials store, with LLM report generation later. **This
+file covers the backend only.** The frontend has its own conventions; nothing here applies to
+`ui/`.
 
 Read [../CLAUDE.md](../CLAUDE.md) for project-wide context and [../PLAN.md](../PLAN.md) §2–3 for the
 target architecture.
@@ -125,10 +126,10 @@ Do not re-discover these the hard way.
 ## Config and state
 
 - **Non-secret config** — `config.rs`, a plain serde struct written as JSON to `app_config_dir()`.
-  This is a deliberate deviation from PLAN.md §2, which names `tauri-plugin-store`: the store is
-  reached through `AppHandle`, so testing "no store present returns the default" would need a mock
-  app. Three booleans do not justify that. When the schedule and platform mappings land, swapping
-  `config.rs` for the plugin is a contained change — nothing outside it sees more than
+  This is a deliberate deviation from `tauri-plugin-store`, which PLAN.md §2 originally named: the
+  store is reached through `AppHandle`, so testing "no store present returns the default" would need
+  a mock app. Three booleans do not justify that. When the schedule and platform mappings land,
+  swapping `config.rs` for the plugin is a contained change — nothing outside it sees more than
   `load`/`save`.
 - **Runtime state** — `AppState`, registered with `app.manage()`. Atomics, not a mutex, because
   they are read on the event-loop thread on every window event.
@@ -151,9 +152,11 @@ Split by kind, on purpose:
   `[dev-dependencies]`, so `tauri` types cannot be named there — a useful constraint, since it means
   nothing testable from that file can depend on the Tauri runtime.
 
-Anything needing a live window belongs in the manual checklist at
-[../documentation/tests/functional-checklist.md](../documentation/tests/functional-checklist.md),
-not in a test that will be skipped or flake.
+Anything needing a live window belongs in an automated e2e test first — the planned layers (UI flows
+against `vite dev` with mocked IPC, WebdriverIO against the built app) are in
+[../PLAN.md](../PLAN.md) §6, and macOS e2e over WebDriver is now possible through a driver still to
+be chosen. Only what genuinely needs eyes, the menu bar or a reboot goes in the manual checklist at
+[../documentation/tests/functional-checklist.md](../documentation/tests/functional-checklist.md).
 
 ## Naming
 

@@ -1,11 +1,12 @@
 # jira-to-qa-portal-2.0
 
-Sync Jira issues into a QA Portal (Quality Tracker), with a UI.
+Desktop app that syncs Jira issues into a QA Portal (Quality Tracker), with a UI — and, next, enters
+work hours into the internal time tracker. Goals and their order: [PLAN.md §1](PLAN.md).
 
 **What exists:** the macOS app lifecycle — tray icon, hide-to-tray, launch at login, single
-instance — plus the Rust/UI module skeleton it establishes. **What does not:** sync, scheduler,
-credentials, Jira client, report generation, and the `sidecar/` Playwright process. See
-[PLAN.md](PLAN.md) §4 for the backlog and
+instance — plus the Rust/UI module skeleton it establishes. **What does not:** the credentials
+window, Jira client, scheduler, sync and the `sidecar/` Playwright process, CI, time tracking and
+report generation. See [PLAN.md](PLAN.md) §4 for the backlog and
 [documentation/docs/overview.md](documentation/docs/overview.md) for what is built.
 
 ## Running it
@@ -70,31 +71,36 @@ bugs → logs into the QA Portal → maps Jira priorities to portal severity lev
 (Blocker/Critical/Major/Minor/Trivial) → updates quality counts per platform → verifies →
 logs out. Key files to reference when porting:
 
-- `reference/legacy-script/helpers/jiraClient.ts` — Jira REST client (Basic Auth: email + API token)
+- `reference/legacy-script/helpers/jiraClient.ts` — Jira REST client: Basic auth (email + API
+  token) routed through the `https://api.atlassian.com/ex/jira/{cloudId}` gateway, so the cloudId is
+  required as well (`JIRA_CLOUD_ID`)
 - `reference/legacy-script/page_objects/QAPortalQualityTracker.ts` — QA Portal page object
 - `reference/legacy-script/data/{jiraData,platformMapping,priorityMapping}.ts` — mappings
 - `reference/legacy-script/tests/sync-jira-qa-portal.spec.ts` — orchestration test
 
 ## What v2.0 is planned to be
 
-A cross-platform desktop app (macOS priority, then Windows, Linux low-priority) replacing
-the console script, so credentials live in the system keychain instead of `.env`, sync
-runs on a schedule, and it generates work-done/in-progress reports from Jira tickets via
-an LLM (Ollama locally first, cloud providers later).
+A desktop app replacing the console script — macOS first, then Windows, Linux low priority. The
+goals, in priority order, are listed in [PLAN.md §1](PLAN.md): Jira → QA Portal sync; time entry
+into the internal time tracker (draft); GitHub Actions builds; a credentials window backed by the
+system keychain; and, later, LLM reports from Jira tickets. Every feature ships with automated
+tests (PLAN.md §6).
 
-Planned stack (see PLAN.md §2-3 for full detail):
+Stack and status (rationale in PLAN.md §2–3). Status is one of done / MVP / draft / later:
 
 | Layer | Tech | Role | Status |
 |---|---|---|---|
-| Core/shell | Tauri (Rust) | app lifecycle, tray, scheduler, IPC | lifecycle + tray done |
-| UI | Vite + React | settings, schedule, sync status, report views | settings panel only |
-| QA Portal automation | Node + Playwright (TS), packaged as a Tauri sidecar | reuses/ports the legacy `helpers/`/`page_objects/`/`data/` logic; runs only during sync | not started |
-| Jira REST | `reqwest` (Rust) or the same Node sidecar | fetch tickets/filters/JQL (open question, see PLAN.md §5) | not started |
-| Scheduler | `tokio-cron-scheduler` (Rust) | configurable cron/interval sync | not started |
-| Credentials | `keyring-rs` → OS keychain | Jira token, QA Portal login, LLM key | not started |
-| App config (non-secret) | plain serde struct → JSON (**deviation**, see below) | schedule, mappings, chosen LLM provider | lifecycle flags only |
+| Core/shell | Tauri (Rust) | app lifecycle, tray, scheduler, IPC | done (lifecycle + tray) |
+| UI | Vite + React | settings, credentials, schedule, sync status, timesheet calendar, report views | done (settings panel) |
 | Autostart | `tauri-plugin-autostart` (`MacosLauncher::LaunchAgent`) | launch at login | done |
-| LLM | Ollama (`localhost:11434`) now; Anthropic/OpenAI later behind an `LLMProvider` trait | report generation | not started |
+| App config (non-secret) | plain serde struct → JSON (**deviation**, see below) | schedule, mappings, chosen LLM provider | done (lifecycle flags) |
+| Credentials window | `keyring-rs` → OS keychain, edited from a UI view | Jira token + cloudId, QA Portal login, time tracker login, LLM key | MVP |
+| Jira REST | `reqwest` (Rust) — **decided**, see below | fetch tickets/filters/JQL; group by platform and priority in pure Rust | MVP |
+| QA Portal automation | Node + Playwright (TS), packaged as a Tauri sidecar | ports the legacy `page_objects/` logic; receives pre-grouped counts; runs only during sync | MVP |
+| Scheduler | `tokio-cron-scheduler` (Rust) | configurable cron/interval sync | MVP |
+| CI | GitHub Actions + `tauri-action` | tests on every push, bundle builds | MVP |
+| Time tracker | API (`reqwest`) or Playwright via the sidecar — undecided (PLAN.md §5) | template hours, calendar review, submit | draft |
+| LLM | Ollama (`localhost:11434`); Anthropic/OpenAI behind an `LLMProvider` trait | report generation | later |
 
 Design principle: heavy work (browser automation, LLM inference) lives in short-lived
 external processes; the Tauri core stays idle (tray + sleeping scheduler) otherwise.
@@ -109,12 +115,15 @@ These resolved open questions or deviated from PLAN.md. Do not re-open them with
 
 | Decision | Instead of | Why |
 |---|---|---|
-| Non-secret config is a plain serde struct written as JSON | `tauri-plugin-store` (PLAN.md §2) | The store is reached through `AppHandle`, so "reading with no store returns the default" would need a mock app. Three booleans did not justify it. Swapping later is contained to `config.rs`. |
+| Non-secret config is a plain serde struct written as JSON | `tauri-plugin-store` (originally PLAN.md §2) | The store is reached through `AppHandle`, so "reading with no store returns the default" would need a mock app. Three booleans did not justify it. Swapping later is contained to `config.rs`. |
 | The tray is built in Rust `setup`, and `app.trayIcon` is **absent** from `tauri.conf.json` | declaring it in config | A config-declared tray is created inside `App::build`, where failure aborts startup; the spec requires that failure to be survivable. Declaring it as well would create a second icon. |
 | The tray menu carries **Show Window** as well as Quit, and opens on left *and* right click | left click reopens the window directly | The spec's manual checklist asks for both "clicking the tray reopens the window" and "Quit is present in the left-click menu"; a status item cannot do both on one click. The menu satisfies the second exactly and the first in one extra click, and guarantees Quit is always reachable. |
 | No tray → the close button **quits** | "leave the window a normal closable window" | A closed window is destroyed, not hidden, and Tauri does not exit when the last one goes. Merely allowing the close would leave a live process with no window and no way to build another. |
 | Hiding drops to `ActivationPolicy::Accessory` | staying `Regular` | Confirmed in the spec's open questions. The consequence: the tray is the only way back in, which is what the no-tray fallback above exists to handle. |
 | `tauri-plugin-single-instance` **and** `RunEvent::Reopen` | either alone | They cover different paths. macOS activates an already-running app rather than starting a second process, so single-instance never fires for a Finder/Spotlight relaunch. |
+| QA Portal sync stays browser-driven (Playwright sidecar) | calling a portal API | The portal computes its parameters in its frontend, so there is no usable API to call. |
+| Jira REST lives in Rust (`reqwest`); the sidecar receives pre-grouped counts | keeping `jiraClient.ts` in the sidecar | Jira needs no browser. Rust makes the grouping a pure, unit-tested function and keeps the sidecar thin and short-lived. This was an open question in PLAN.md §5. |
+| OpenSpec (`openspec/`) is the spec/plan workflow | `_specs/` + `_plans/` | One tool for proposal, design, tasks and archive. The two old folders stay as history of the lifecycle feature. |
 
 **One of these is expected to change.** Hiding retains the webview — 45 MB across three WebKit
 helpers, 62% of the idle footprint — for a window opened about once a day, so closing it is planned
@@ -142,18 +151,27 @@ holds — including "no tray → the close button quits", which stays correct ei
   it is close to zero *before* the schedule editor and the report views exist.
 - Platform-specific code is behind `#[cfg(target_os = "macos")]` so a Windows/Linux build is
   additive rather than a rewrite.
-- Tests: pure logic gets unit tests; anything needing a live window, the menu bar or a reboot goes
-  in [documentation/tests/functional-checklist.md](documentation/tests/functional-checklist.md)
-  rather than a test that will flake.
+- Tests: every feature ships unit tests, plus automated e2e where it has UI or cross-process
+  behaviour — the layers and tools are in [PLAN.md §6](PLAN.md). The manual
+  [functional-checklist.md](documentation/tests/functional-checklist.md) is for what needs eyes,
+  the menu bar or a reboot. Live systems (Jira, QA Portal, time tracker) are touched only through a
+  dry-run mode, and never from CI.
 - `reference/legacy-script/` has its own `package.json`/Playwright config, but it is
   reference-only — do not treat it as the active project's toolchain.
-- UI framework: React (chosen over the Svelte alternative PLAN.md left open).
+- UI framework: React (chosen over the Svelte alternative PLAN.md originally left open).
 - Rust toolchain managed via `rustup` (not `mise` — `mise`'s HTTP client fails TLS through
   this machine's network setup).
 
 ## Spec and plan workflow
 
-`_specs/` holds feature specs (summary, edge cases, acceptance criteria, open questions answered
-inline by the user); `_plans/` holds the implementation plan derived from a spec. Both are inputs,
-not living documents — once a feature ships, its behaviour is documented in `documentation/` and the
-decisions above, and the spec/plan pair is history.
+Changes are planned and tracked with **OpenSpec**, under `openspec/`:
+
+- `/opsx:explore` — think a change through before committing to it
+- `/opsx:propose` — create a change with its proposal, design and tasks
+- `/opsx:apply` — implement a change's tasks, ticking them off as they land
+- `/opsx:archive` — archive a finished change
+
+A change is an input, not a living document — once it ships, its behaviour is documented in
+`documentation/` and the decisions above, and the archived change is history. The same holds for
+`_specs/` and `_plans/`, the pre-OpenSpec spec/plan pair for the app lifecycle feature; they are
+kept as written and not updated.

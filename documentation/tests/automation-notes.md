@@ -63,7 +63,7 @@ enforced by an untested `if` — becomes a test.
 
 ### Cheap additions to existing modules
 
-- **`config.rs`** — 8 tests. Missing: a corrupt file, a file with unknown fields, an unwritable
+- **`config.rs`** — 8 tests, corrupt files and unknown fields included. Missing: an unwritable
   directory, and whether a partial write can leave the file truncated.
 - **Property tests over `decide()`** — `a_tray_failure_never_produces_a_hide` already loops over a
   small matrix by hand. `proptest` would state the invariant once and cover the whole state space,
@@ -98,14 +98,20 @@ Gaps, roughly in order of value:
 
 ### The constraint that shapes everything
 
-Tauri's official E2E route is `tauri-driver` with WebdriverIO — and **it has no macOS support**,
-because WKWebView exposes no WebDriver endpoint. Verify against current Tauri docs before planning
-around it, but assume for now that the standard answer does not apply to this project's primary
-platform.
+Tauri's original E2E route, `tauri-driver` with WebdriverIO, has no macOS support, because WKWebView
+exposes no WebDriver endpoint. That is no longer the whole story: current WebdriverIO and Tauri docs
+list two routes that reach macOS —
 
-So macOS E2E means the accessibility API, driven from AppleScript. That is less elegant and it is
-also what [performance.md §5](performance.md#5-showhide-cycle-leak-test-50-cycles) already had to
-build.
+- **`tauri-plugin-wdio-webdriver`** — a plugin compiled into a test build that serves WebDriver from
+  inside the app;
+- **`@crabnebula/tauri-driver`** — CrabNebula's driver, which adds macOS to the `tauri-driver` model.
+
+Neither has been tried in this repo, so their maturity is unverified. **To evaluate** before
+committing to one; [PLAN.md](../../PLAN.md) §6 records the same open choice.
+
+Either reaches the webview, not the menu bar. The tray, the Dock and the activation policy still
+need the accessibility API, driven from AppleScript — less elegant, and also what
+[performance.md §5](performance.md#5-showhide-cycle-leak-test-50-cycles) already had to build.
 
 ### The harness already half exists
 
@@ -216,7 +222,9 @@ the cheapest thing on this page:
 cargo test · cargo clippy -D warnings · npm test · npm run build · npm run lint
 ```
 
-Needs a macOS runner for the Tauri build. Everything else runs anywhere.
+Needs a macOS runner — not only for the Tauri build. `tray.rs` and `lifecycle/macos.rs` compile only
+on macOS, so `cargo test` and `cargo clippy` would check a different crate on Linux. The `ui/` steps
+run anywhere.
 
 ---
 

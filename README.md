@@ -1,13 +1,15 @@
 # jira-to-qa-portal-2.0
 
-Desktop app that syncs Jira issues into the QA Portal (Quality Tracker). It replaces the v1.0
-console Playwright script so credentials live in the system keychain instead of `.env`, syncs run
-on a schedule, and reports are generated from Jira tickets by an LLM.
+Desktop app that syncs Jira issues into the QA Portal (Quality Tracker), replacing the v1.0 console
+Playwright script. The aim: syncs that run on a schedule, credentials in the system keychain instead
+of `.env`, and builds from GitHub Actions. Time entry into the internal time tracker is drafted as
+the next goal; LLM reports from Jira tickets come later. The goals and their order are in
+[PLAN.md](PLAN.md) §1.
 
 **Current state:** the macOS app lifecycle is implemented — tray icon, hide-to-tray, launch at
-login, single instance. Sync, scheduler and report generation are not built yet; see
-[PLAN.md](PLAN.md) §4 for the MVP backlog and [documentation/docs/overview.md](documentation/docs/overview.md)
-for what exists today.
+login, single instance. The credentials window, Jira client, sync, scheduler, CI, time tracking and
+report generation are not built yet; see [PLAN.md](PLAN.md) §4 for the backlog and
+[documentation/docs/overview.md](documentation/docs/overview.md) for what exists today.
 
 ---
 
@@ -36,9 +38,10 @@ for what exists today.
 └──────────────────────────────────────────────────────────────────┘
 ```
 
-Planned but not yet built: a Node + Playwright **sidecar** for QA Portal automation, a
-`tokio-cron-scheduler` **scheduler**, `keyring-rs` **credential storage**, and an **LLM** report
-generator. See [PLAN.md](PLAN.md) §2–3.
+Planned but not yet built: a Node + Playwright **sidecar** for QA Portal automation, a `reqwest`
+**Jira client** in the Rust core, a `tokio-cron-scheduler` **scheduler**, a **credentials window**
+backed by `keyring-rs`, a **time tracker** client (draft), and **CI** on GitHub Actions. An **LLM**
+report generator comes later. See [PLAN.md](PLAN.md) §2–3.
 
 ### The design principle that shapes everything
 
@@ -109,8 +112,10 @@ targets, which are separate artefacts from a normal build.
 **Nothing runs these on its own.** There is no CI in this repo, and no build command runs a test:
 Rust drops `#[cfg(test)]` code from a normal build entirely, and `tauri build` only calls
 `tsc -b && vite build` for the frontend. A green build means the tests *compile*, not that they
-pass. [documentation/tests/automation-notes.md](documentation/tests/automation-notes.md) covers what
-to do about that.
+pass. A CI workflow and an automated e2e layer are planned, not built — the testing strategy is
+[PLAN.md](PLAN.md) §6, and
+[documentation/tests/automation-notes.md](documentation/tests/automation-notes.md) covers the options
+in more detail.
 
 The two interactive steps run separately, from the root:
 
@@ -122,8 +127,8 @@ npm run tauri build    # produces the .app and the .dmg
 In `tauri dev` the window's close button **hides the app to the tray** rather than stopping the dev
 server — that is the feature working, not a hang. Stop it with Ctrl-C in the terminal, or ⌘Q.
 
-Manual and performance checks — which cannot be automated, because they involve the menu bar, the
-Dock and a reboot — are in [documentation/tests/](documentation/tests/).
+Manual and performance checks — the ones that need eyes, the menu bar, the Dock or a reboot, and
+are not automated today — are in [documentation/tests/](documentation/tests/).
 
 ---
 
