@@ -172,8 +172,8 @@ Feature: [Settings UI](../docs/features/08-settings-ui.md).
 |---|---|---|---|---|---|---|
 | IPC-001 | [IPC][Wrappers] Call each lib/ipc.ts wrapper -> it invokes the registered command name with the right arguments | component | automated | `lib/ipc.ts` | [Settings UI](../docs/features/08-settings-ui.md) | — |
 | IPC-002 | [IPC][Wrappers] Backend rejects a command -> the wrapper rejects with the same message | component | automated | `lib/ipc.ts` | [Settings UI](../docs/features/08-settings-ui.md) | — |
-| IPC-003 | [IPC][Contract] Compare lib/ipc.ts with the Rust handler list -> the same command names on both sides | component | automated | `lib.rs + lib/ipc.ts` | [change](../../openspec/changes/build-test-pyramid/proposal.md) | — |
-| IPC-004 | [IPC][Contract] Compare the test-build handler list with production -> production plus e2e_* names only | component | automated | `lib.rs` | [change](../../openspec/changes/build-test-pyramid/proposal.md) | — |
+| IPC-003 | [IPC][Contract] Compare lib/ipc.ts with the Rust handler list -> the same command names on both sides | component | automated | `lib.rs + lib/ipc.ts` | [change](../../openspec/changes/archive/2026-10-16-build-test-pyramid/proposal.md) | — |
+| IPC-004 | [IPC][Contract] Compare the test-build handler list with production -> production plus e2e_* names only | component | automated | `lib.rs` | [change](../../openspec/changes/archive/2026-10-16-build-test-pyramid/proposal.md) | — |
 
 ## System — `SYS`
 
