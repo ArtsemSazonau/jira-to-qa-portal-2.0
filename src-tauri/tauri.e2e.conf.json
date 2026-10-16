@@ -1,0 +1,16 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "jira-to-qa-portal-e2e",
+  "identifier": "dev.sazonau.jira-to-qa-portal.e2e",
+  "app": {
+    "windows": [
+      {
+        "title": "QA Portal Sync — TEST BUILD",
+        "width": 800,
+        "height": 600,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ]
+  }
+}

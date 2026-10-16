@@ -42,7 +42,7 @@ intended extension point, and it should ask rather than refuse.
 ## Clean teardown
 
 Selecting Quit leaves no orphan process and no tray icon. Verify with
-[performance scenario 7](../../tests/performance.md#7-launchquit-cycle-test-20-iterations), which
+[PERF-007](../../tests/cases/performance/PERF-007-launch-quit-cycles.md), which
 runs 20 launch/quit cycles and checks for residual processes and leaked file descriptors — including
 the WebKit helpers, which are launched by launchd and so do **not** appear as children in a `ps`
 tree.
@@ -71,18 +71,24 @@ explicitly, so it is findable.
 
 ## Tests
 
-| Test | File |
-|---|---|
-| `quit_triggers_exit_regardless_of_window_state` | `policy.rs` |
-| `quit_exits_even_when_the_tray_is_unavailable` | `policy.rs` |
-| `close_while_quitting_is_allowed_through` | `policy.rs` |
-| `the_quit_menu_id_maps_to_the_app_exit_action` | `policy.rs` |
-| `cmd_q_quits_even_though_macos_closes_the_window_on_the_way_out` | `tests/lifecycle_policy.rs` |
-| `the_tray_quit_item_follows_the_same_path_as_cmd_q` | `tests/lifecycle_policy.rs` |
-| `no_trigger_from_outside_can_produce_an_exit_without_a_quit` | `tests/lifecycle_policy.rs` |
+Every case for this feature is in the test catalog — the [`QUIT` cases](../../tests/catalog.md#quit--quit). The automated tests that
+carry each ID, with their files, are listed in the generated
+[inventory](../../tests/inventory.md); `npm run test:catalog` keeps the two in step.
 
-That last one is the inverse guard: it asserts that no external trigger — a close, a tray click, a
-second launch, a reopen — can ever produce an `Exit` on its own.
+| Case | Behaviour | Status | Levels |
+|---|---|---|---|
+| [QUIT-001](../../tests/cases/quit/QUIT-001-cmd-q.md) | Press ⌘Q with the window focused -> the process exits and the tray icon disappears | automated | unit, e2e |
+| [QUIT-002](../../tests/cases/quit/QUIT-002-app-menu-quit.md) | App menu → Quit -> the process exits and the tray icon disappears | automated | e2e |
+| [QUIT-003](../../tests/cases/quit/QUIT-003-tray-quit-visible.md) | Tray → Quit with the window visible -> the process exits and the tray icon disappears | automated | unit, e2e |
+| [QUIT-004](../../tests/cases/quit/QUIT-004-tray-quit-hidden.md) | Tray → Quit with the window hidden -> the process exits and the tray icon disappears | automated | unit, e2e |
+| [QUIT-005](../../tests/cases/quit/QUIT-005-quit-appleevent.md) | Send a Quit AppleEvent -> the process exits and the tray icon disappears | automated | e2e |
+| [QUIT-006](../../tests/cases/quit/QUIT-006-no-leftover-process.md) | After any quit -> no app process remains | automated | e2e |
+| [QUIT-007](../../tests/cases/quit/QUIT-007-no-orphan-webkit.md) | After any quit -> no orphaned WebKit processes | automated | e2e |
+| [QUIT-008](../../tests/cases/quit/QUIT-008-no-crash-report.md) | After any quit -> no crash report for the app | automated | e2e |
+| [QUIT-009](../../tests/cases/quit/QUIT-009-cmd-q-hidden.md) | ⌘Q while the window is hidden -> the app exits cleanly | automated | e2e |
+| QUIT-010 | Tray → Quit when the tray is otherwise unavailable -> still exits | automated | unit |
+| QUIT-011 | Any show, close or reopen trigger with a tray -> never exits the app | automated | unit |
 
-Manual checks are in
-[the functional checklist](../../tests/functional-checklist.md#module-librs--quit-paths).
+`manual` and `partial` cases are run by hand before a release, from their case files; see
+[Before a release](../../tests/README.md#before-a-release).
+

@@ -21,5 +21,19 @@ export default defineConfig({
     setupFiles: ['./src/test/setup.ts'],
     // Rust has its own `cargo test`; this only ever runs the frontend.
     include: ['src/**/*.test.{ts,tsx}'],
+    coverage: {
+      include: ['src/**/*.{ts,tsx}'],
+      // Test infrastructure, and the bootstrap that only a real page runs
+      // (the UI flows cover it).
+      exclude: ['src/**/*.test.{ts,tsx}', 'src/test/**', 'src/main.tsx'],
+      // A floor, not a target: the measured values rounded down to 5%. Raise
+      // them when coverage rises; a drop below fails `npm run test:coverage`.
+      thresholds: {
+        statements: 90,
+        branches: 85,
+        functions: 100,
+        lines: 100,
+      },
+    },
   },
 })

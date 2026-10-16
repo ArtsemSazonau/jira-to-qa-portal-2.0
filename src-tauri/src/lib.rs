@@ -11,6 +11,8 @@ pub mod autostart;
 pub mod notify;
 #[cfg(target_os = "macos")]
 pub mod tray;
+#[cfg(feature = "e2e")]
+pub mod e2e;
 
 use lifecycle::policy::{self, decide, Trigger};
 use lifecycle::{AppState, MAIN_WINDOW};
@@ -42,16 +44,38 @@ pub fn run() {
                 tauri_plugin_autostart::MacosLauncher::LaunchAgent,
                 Some(autostart::launch_args()),
             ));
+
+        // Test build only: an embedded WebDriver server (port from
+        // `TAURI_WEBDRIVER_PORT`, default 4445) that the e2e harness drives the
+        // window through. Absent from release builds and `tauri dev`.
+        #[cfg(feature = "e2e")]
+        {
+            builder = builder.plugin(tauri_plugin_wdio_webdriver::init());
+        }
     }
 
+    // Two lists because `generate_handler!` takes no per-item `cfg`, and only the last
+    // `invoke_handler` call counts. The test build's list is the production list plus `e2e::`
+    // commands only; `ui/src/lib/ipc.contract.test.ts` fails if the shared part drifts.
+    #[cfg(not(feature = "e2e"))]
+    let builder = builder.invoke_handler(tauri::generate_handler![
+        ipc_commands::get_autostart_enabled,
+        ipc_commands::set_autostart_enabled,
+        ipc_commands::show_main_window,
+        ipc_commands::hide_main_window,
+        ipc_commands::get_tray_available,
+    ]);
+    #[cfg(feature = "e2e")]
+    let builder = builder.invoke_handler(tauri::generate_handler![
+        ipc_commands::get_autostart_enabled,
+        ipc_commands::set_autostart_enabled,
+        ipc_commands::show_main_window,
+        ipc_commands::hide_main_window,
+        ipc_commands::get_tray_available,
+        e2e::e2e_snapshot,
+    ]);
+
     builder
-        .invoke_handler(tauri::generate_handler![
-            ipc_commands::get_autostart_enabled,
-            ipc_commands::set_autostart_enabled,
-            ipc_commands::show_main_window,
-            ipc_commands::hide_main_window,
-            ipc_commands::get_tray_available,
-        ])
         .setup(setup)
         .on_window_event(on_window_event)
         .build(tauri::generate_context!())

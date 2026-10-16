@@ -6,9 +6,19 @@
   "scripts": {
     "dev": "tauri dev",
     "build": "tauri build",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "test:catalog": "node scripts/test/catalog.mjs",
+    "test:fast": "scripts/test/fast.sh",
+    "build:e2e": "tauri build --debug --features e2e --bundles app --config src-tauri/tauri.e2e.conf.json",
+    "test:flows": "cd ui && npx playwright test",
+    "test:doctor": "scripts/test/doctor.sh",
+    "test:e2e": "scripts/test/e2e.sh",
+    "test:regression": "scripts/test/regression.sh",
+    "prepare": "lefthook install",
+    "test:release": "scripts/test/release-smoke.sh"
   },
   "devDependencies": {
-    "@tauri-apps/cli": "^2"
+    "@tauri-apps/cli": "^2",
+    "lefthook": "^2.2.2"
   }
 }

@@ -110,16 +110,24 @@ progress indicator, for instance, via `set_icon` or `set_title`.
 
 ## Tests
 
-| Test | File |
-|---|---|
-| `tray_menu_contains_exactly_the_expected_ids` | `src-tauri/src/lifecycle/policy.rs` |
-| `the_quit_menu_id_maps_to_the_app_exit_action` | `src-tauri/src/lifecycle/policy.rs` |
-| `the_show_menu_id_maps_to_the_show_action` | `src-tauri/src/lifecycle/policy.rs` |
-| `an_unknown_menu_id_maps_to_nothing` | `src-tauri/src/lifecycle/policy.rs` |
-| `every_menu_label_is_non_empty` | `src-tauri/src/lifecycle/policy.rs` |
-| `a_fresh_state_assumes_no_tray_until_one_is_registered` | `src-tauri/src/lifecycle/mod.rs` |
-| `the_tray_menu_offers_both_a_way_in_and_a_way_out` | `src-tauri/tests/lifecycle_policy.rs` |
-| `without_a_tray_the_app_never_hides_itself_out_of_reach` | `src-tauri/tests/lifecycle_policy.rs` |
+Every case for this feature is in the test catalog — the [`TRAY` cases](../../tests/catalog.md#os-tray--tray). The automated tests that
+carry each ID, with their files, are listed in the generated
+[inventory](../../tests/inventory.md); `npm run test:catalog` keeps the two in step.
 
-Manual checks — the icon's presence, legibility in both appearances, and sharpness on a Retina
-display — are in [the functional checklist](../../tests/functional-checklist.md#module-trayrs).
+| Case | Behaviour | Status | Levels |
+|---|---|---|---|
+| [TRAY-001](../../tests/cases/tray/TRAY-001-icon-appears.md) | Launch the app -> a tray icon appears in the menu bar | automated | e2e |
+| [TRAY-002](../../tests/cases/tray/TRAY-002-left-click-menu.md) | Left-click the icon -> menu shows Show Window, a separator, Quit | automated | unit, e2e |
+| [TRAY-003](../../tests/cases/tray/TRAY-003-right-click-menu.md) | Right-click the icon -> the same menu opens | automated | e2e |
+| [TRAY-004](../../tests/cases/tray/TRAY-004-show-while-visible.md) | Show Window while the window is visible -> it comes forward, no second window | automated | unit, e2e |
+| [TRAY-005](../../tests/cases/tray/TRAY-005-show-while-hidden.md) | Show Window while hidden -> the same window reappears with its prior state | automated | unit, e2e |
+| [TRAY-006](../../tests/cases/tray/TRAY-006-dark-appearance.md) | Switch macOS to Dark appearance -> the icon inverts and stays legible | manual | manual |
+| [TRAY-007](../../tests/cases/tray/TRAY-007-light-appearance.md) | Switch back to Light appearance -> the icon stays legible | manual | manual |
+| [TRAY-008](../../tests/cases/tray/TRAY-008-scale-factor.md) | Move the window to a display with another scale factor -> the icon stays sharp | manual | manual |
+| [TRAY-009](../../tests/cases/tray/TRAY-009-icon-removed-on-quit.md) | Quit the app -> the tray icon disappears immediately | automated | e2e |
+| [TRAY-010](../../tests/cases/tray/TRAY-010-tray-failure-fallback.md) | Tray creation fails -> app still starts, logs the fallback, window warns that closing quits | partial | unit, component, flow, manual |
+| TRAY-011 | Menu event with an unknown id -> ignored, nothing happens | automated | unit |
+
+`manual` and `partial` cases are run by hand before a release, from their case files; see
+[Before a release](../../tests/README.md#before-a-release).
+

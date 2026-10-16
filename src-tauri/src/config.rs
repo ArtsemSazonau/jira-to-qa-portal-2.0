@@ -131,6 +131,7 @@ mod tests {
     use super::*;
     use tempfile::tempdir;
 
+    // case: CONF-009
     #[test]
     fn default_is_all_off() {
         let config = AppConfig::default();
@@ -139,6 +140,7 @@ mod tests {
         assert!(!config.first_run_prompt_shown);
     }
 
+    // case: CONF-004
     #[test]
     fn reading_with_no_store_present_returns_the_default() {
         let dir = tempdir().unwrap();
@@ -148,6 +150,7 @@ mod tests {
         assert_eq!(load(&path), AppConfig::default());
     }
 
+    // case: CONF-002
     #[test]
     fn writing_then_reading_returns_the_same_value() {
         let dir = tempdir().unwrap();
@@ -164,6 +167,7 @@ mod tests {
         assert_eq!(load(&path), written);
     }
 
+    // case: CONF-004
     #[test]
     fn save_creates_missing_parent_directories() {
         let dir = tempdir().unwrap();
@@ -174,6 +178,7 @@ mod tests {
         assert!(path.exists());
     }
 
+    // case: CONF-006
     #[test]
     fn save_leaves_no_temp_file_behind() {
         let dir = tempdir().unwrap();
@@ -189,6 +194,7 @@ mod tests {
         assert!(leftovers.is_empty(), "unexpected files: {leftovers:?}");
     }
 
+    // case: CONF-003
     #[test]
     fn a_corrupt_file_is_an_error_for_try_load_but_defaults_for_load() {
         let dir = tempdir().unwrap();
@@ -199,6 +205,7 @@ mod tests {
         assert_eq!(load(&path), AppConfig::default());
     }
 
+    // case: CONF-005
     #[test]
     fn unknown_and_missing_keys_do_not_break_the_read() {
         let dir = tempdir().unwrap();
@@ -214,6 +221,35 @@ mod tests {
         assert!(config.autostart_enabled);
         assert!(!config.first_close_notice_shown);
         assert!(!config.first_run_prompt_shown);
+    }
+
+    // case: CONF-007
+    #[cfg(unix)]
+    #[test]
+    fn saving_into_an_unwritable_directory_fails_cleanly() {
+        use std::os::unix::fs::PermissionsExt;
+
+        let dir = tempdir().unwrap();
+        let path = config_path(dir.path());
+        let stored = AppConfig {
+            autostart_enabled: true,
+            ..AppConfig::default()
+        };
+        save(&path, &stored).unwrap();
+
+        fs::set_permissions(dir.path(), fs::Permissions::from_mode(0o555)).unwrap();
+        let result = save(&path, &AppConfig::default());
+        let leftovers: Vec<_> = fs::read_dir(dir.path())
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name())
+            .filter(|name| name != CONFIG_FILE_NAME)
+            .collect();
+        // Restore before asserting, so a failure still lets the tempdir clean up.
+        fs::set_permissions(dir.path(), fs::Permissions::from_mode(0o755)).unwrap();
+
+        assert!(matches!(result, Err(ConfigError::Io { .. })), "{result:?}");
+        assert!(leftovers.is_empty(), "unexpected files: {leftovers:?}");
+        assert_eq!(try_load(&path).unwrap(), Some(stored), "the previous file must survive");
     }
 
     #[test]

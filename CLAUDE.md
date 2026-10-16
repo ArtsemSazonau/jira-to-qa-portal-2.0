@@ -4,7 +4,9 @@ Desktop app that syncs Jira issues into a QA Portal (Quality Tracker), with a UI
 work hours into the internal time tracker. Goals and their order: [PLAN.md §1](PLAN.md).
 
 **What exists:** the macOS app lifecycle — tray icon, hide-to-tray, launch at login, single
-instance — plus the Rust/UI module skeleton it establishes. **What does not:** the credentials
+instance — plus the Rust/UI module skeleton it establishes, and a test pyramid over it: unit,
+component, UI-flow and end-to-end layers, one command per stage, and a test-case catalog
+([documentation/tests/README.md](documentation/tests/README.md)). **What does not:** the credentials
 window, Jira client, scheduler, sync and the `sidecar/` Playwright process, CI, time tracking and
 report generation. See [PLAN.md](PLAN.md) §4 for the backlog and
 [documentation/docs/overview.md](documentation/docs/overview.md) for what is built.
@@ -12,18 +14,17 @@ report generation. See [PLAN.md](PLAN.md) §4 for the backlog and
 ## Running it
 
 ```bash
-npm install          # root devDependency: @tauri-apps/cli
+npm install          # root devDependencies: @tauri-apps/cli, lefthook (installs the pre-push hook)
 npm --prefix ui install
 npm run tauri dev    # launches Vite (ui/, port 1420) + the Tauri window
 
-cd src-tauri && cargo test     # 57 Rust tests
-cd ui && npm test              # 14 UI tests
+npm run test:fast    # 74 Rust + 25 UI tests, clippy, ui build, oxlint, 10 UI flows, catalog check
 ```
 
-The full automated suite — five commands, expected output per step — is in
-[README.md](README.md#testing). Run it from there rather than assembling it from memory: `build`
-means `tauri build` at the root and `tsc -b && vite build` in `ui/`, and there is no root `lint`
-script, so a half-remembered sequence silently runs the wrong thing.
+`npm run test:fast` is the whole suite that needs no built app, and the pre-push hook runs it. Use it
+rather than assembling the steps from memory: `build` means `tauri build` at the root and
+`tsc -b && vite build` in `ui/`, so a half-remembered sequence silently runs the wrong thing. Stages,
+expected output and the test catalog are in [documentation/tests/README.md](documentation/tests/README.md).
 
 `npm run tauri build` produces a release bundle. Root `package.json` only holds the Tauri
 CLI + scripts; the frontend's own dependencies live in `ui/package.json`.
@@ -98,6 +99,7 @@ Stack and status (rationale in PLAN.md §2–3). Status is one of done / MVP / d
 | Jira REST | `reqwest` (Rust) — **decided**, see below | fetch tickets/filters/JQL; group by platform and priority in pure Rust | MVP |
 | QA Portal automation | Node + Playwright (TS), packaged as a Tauri sidecar | ports the legacy `page_objects/` logic; receives pre-grouped counts; runs only during sync | MVP |
 | Scheduler | `tokio-cron-scheduler` (Rust) | configurable cron/interval sync | MVP |
+| Tests | `cargo test` + `proptest`; vitest + Testing Library + `axe-core`; Playwright (WebKit, mocked IPC) for UI flows; WebdriverIO + `tauri-plugin-wdio-webdriver` + Appium Mac2 for e2e | fast suite, regression, release smoke; test-case catalog | done |
 | CI | GitHub Actions + `tauri-action` | tests on every push, bundle builds | MVP |
 | Time tracker | API (`reqwest`) or Playwright via the sidecar — undecided (PLAN.md §5) | template hours, calendar review, submit | draft |
 | LLM | Ollama (`localhost:11434`); Anthropic/OpenAI behind an `LLMProvider` trait | report generation | later |
@@ -124,6 +126,10 @@ These resolved open questions or deviated from PLAN.md. Do not re-open them with
 | QA Portal sync stays browser-driven (Playwright sidecar) | calling a portal API | The portal computes its parameters in its frontend, so there is no usable API to call. |
 | Jira REST lives in Rust (`reqwest`); the sidecar receives pre-grouped counts | keeping `jiraClient.ts` in the sidecar | Jira needs no browser. Rust makes the grouping a pure, unit-tested function and keeps the sidecar thin and short-lived. This was an open question in PLAN.md §5. |
 | OpenSpec (`openspec/`) is the spec/plan workflow | `_specs/` + `_plans/` | One tool for proposal, design, tasks and archive. The two old folders stay as history of the lifecycle feature. |
+| E2E: WebdriverIO with the embedded `tauri-plugin-wdio-webdriver` for the webview, plus an Appium Mac2 session for the menu bar, close button and Dock | AppleScript alone; `@crabnebula/tauri-driver` | WebDriver reaches the DOM, Appium reaches AppKit; one tool cannot do both well. CrabNebula needs a paid key on macOS. The Appium session is a standalone `remote()` in `e2e/support/os.ts`, not WebdriverIO multiremote, because `@wdio/tauri-service` treats every capability as a Tauri app |
+| The test build is a cargo feature (`e2e`) plus a config overlay with its own identifier and product name | a runtime flag; isolating each resource | Nothing of it compiles into a release or `tauri dev`. The config dir, the login-item plist and the single-instance lock are all keyed by identity, so a new identity separates all three from the real app. `npm run test:release` checks the release binary for leaks |
+| `e2e_snapshot` is called through `window.__TAURI_INTERNALS__.invoke` | `browser.tauri.execute` | The service's execute needs a second plugin (`tauri-plugin-wdio`), a frontend import, `withGlobalTauri` and `wdio:*` permissions; the plain invoke needs none of them |
+| Every test case lives in `documentation/tests/catalog.md`, tagged in the test that covers it, checked by `npm run test:catalog` | a manual checklist | The catalog cannot claim coverage that does not exist: an untagged claim, an orphan tag or a stale inventory fails the fast suite |
 
 **One of these is expected to change.** Hiding retains the webview — 45 MB across three WebKit
 helpers, 62% of the idle footprint — for a window opened about once a day, so closing it is planned
@@ -152,9 +158,10 @@ holds — including "no tray → the close button quits", which stays correct ei
 - Platform-specific code is behind `#[cfg(target_os = "macos")]` so a Windows/Linux build is
   additive rather than a rewrite.
 - Tests: every feature ships unit tests, plus automated e2e where it has UI or cross-process
-  behaviour — the layers and tools are in [PLAN.md §6](PLAN.md). The manual
-  [functional-checklist.md](documentation/tests/functional-checklist.md) is for what needs eyes,
-  the menu bar or a reboot. Live systems (Jira, QA Portal, time tracker) are touched only through a
+  behaviour — the layers, tools and stages are in
+  [documentation/tests/README.md](documentation/tests/README.md). Every case is listed in
+  [catalog.md](documentation/tests/catalog.md); `manual` cases are for what needs eyes, the menu bar
+  or a reboot. Live systems (Jira, QA Portal, time tracker) are touched only through a
   dry-run mode, and never from CI.
 - `reference/legacy-script/` has its own `package.json`/Playwright config, but it is
   reference-only — do not treat it as the active project's toolchain.

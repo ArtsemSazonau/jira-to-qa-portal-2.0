@@ -8,21 +8,24 @@ documentation/
 │   ├── overview.md          what is implemented, and how the pieces fit
 │   └── features/            one document per feature
 └── tests/
-    ├── functional-checklist.md   manual checks, ordered by module
-    ├── performance.md            performance, load and stability scenarios
-    └── automation-notes.md       what could be automated next, and what it would cost
+    ├── README.md            testing strategy: layers, tools, stages, naming, the test-first loop
+    ├── catalog.md           every test case, by area and feature, with its status
+    ├── inventory.md         generated: every automated test and the case it carries
+    ├── cases/               one file per manual, partial, e2e and performance case
+    ├── performance/         how performance is measured
+    └── runs/                manual pass records and performance results
 ```
 
 ## Start here
 
 - **[docs/overview.md](docs/overview.md)** — every implemented feature in one table, the decision
   flow they all share, and what is deliberately not built yet.
-- **[tests/functional-checklist.md](tests/functional-checklist.md)** — before shipping a change to
-  the lifecycle.
-- **[tests/performance.md](tests/performance.md)** — before and after any change to the core
-  process, so the idle baseline stays honest.
-- **[tests/automation-notes.md](tests/automation-notes.md)** — when picking up test work, rather
-  than before a release.
+- **[tests/README.md](tests/README.md)** — how the project is tested, and which command runs which
+  stage.
+- **[tests/catalog.md](tests/catalog.md)** — every test case; before shipping a change, its
+  `manual` and `partial` cases are the manual pass.
+- **[tests/performance/README.md](tests/performance/README.md)** — before and after any change to
+  the core process, so the idle baseline stays honest.
 
 ## Features
 
@@ -52,5 +55,6 @@ and which tests cover it.
 ## Adding to this
 
 A new feature gets a numbered document in `docs/features/`, a row in
-[docs/overview.md](docs/overview.md), a module section in the functional checklist, and — if it runs
-in the core process — a before/after row in the performance results table.
+[docs/overview.md](docs/overview.md), its cases in [tests/catalog.md](tests/catalog.md) with case
+files where they are needed, and — if it runs in the core process — a before/after section in
+[tests/runs/performance-results.md](tests/runs/performance-results.md).

@@ -83,12 +83,22 @@ pub fn should_show_first_run_prompt(already_shown: bool, autostart_enabled: bool
 
 ## Tests
 
-| Test | File |
-|---|---|
-| `the_first_close_notice_shows_once` | `policy.rs` |
-| `the_first_run_prompt_shows_once_and_only_when_autostart_is_off` | `policy.rs` |
-| `the_one_time_notices_stop_after_their_flag_is_persisted` | `tests/lifecycle_policy.rs` |
-| `the_first_run_prompt_is_skipped_when_autostart_is_already_on` | `tests/lifecycle_policy.rs` |
+Every case for this feature is in the test catalog — the [`NOTE` cases](../../tests/catalog.md#notifications--note). The automated tests that
+carry each ID, with their files, are listed in the generated
+[inventory](../../tests/inventory.md); `npm run test:catalog` keeps the two in step.
 
-Delivery itself is manual —
-[the functional checklist](../../tests/functional-checklist.md#module-notifyrs).
+| Case | Behaviour | Status | Levels |
+|---|---|---|---|
+| [NOTE-001](../../tests/cases/note/NOTE-001-first-run-prompt.md) | Fresh install, first launch -> a notification offers launch at login | partial | unit, e2e, manual |
+| [NOTE-002](../../tests/cases/note/NOTE-002-first-close-notice.md) | Fresh install, first window close -> a notification says the app still runs in the menu bar | partial | unit, e2e, manual |
+| [NOTE-003](../../tests/cases/note/NOTE-003-no-repeat-close-notice.md) | Close the window a second time -> no notification | partial | unit, e2e, manual |
+| [NOTE-004](../../tests/cases/note/NOTE-004-no-repeat-first-run.md) | Relaunch once config exists -> no first-run notification | partial | unit, e2e, manual |
+| [NOTE-005](../../tests/cases/note/NOTE-005-reset-refires.md) | Delete app-config.json and relaunch -> both notices fire again | partial | e2e, manual |
+| [NOTE-006](../../tests/cases/note/NOTE-006-skip-when-registered.md) | Fresh install with autostart already registered -> the first-run prompt is skipped | partial | unit, e2e, manual |
+| [NOTE-007](../../tests/cases/note/NOTE-007-do-not-disturb.md) | Trigger a notice with Do Not Disturb on -> no hang or crash, hide still works, a warn in the log | manual | manual |
+| [NOTE-008](../../tests/cases/note/NOTE-008-notifications-denied.md) | Trigger a notice with notifications denied -> no hang or crash, hide still works, a warn in the log | manual | manual |
+| NOTE-009 | Build both notices -> non-empty texts, the close notice names the menu bar and Quit | automated | unit |
+
+`manual` and `partial` cases are run by hand before a release, from their case files; see
+[Before a release](../../tests/README.md#before-a-release).
+

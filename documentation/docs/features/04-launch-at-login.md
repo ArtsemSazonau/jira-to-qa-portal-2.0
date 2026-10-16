@@ -117,23 +117,29 @@ ls ~/Library/LaunchAgents/ | grep -i qa-portal || echo "correctly removed"
 
 ## Tests
 
-| Test | File |
-|---|---|
-| `a_fresh_install_with_no_registration_is_off` | `policy.rs` |
-| `a_fresh_install_adopts_an_existing_registration` | `policy.rs` |
-| `agreement_needs_no_correction_in_either_direction` | `policy.rs` |
-| `registered_behind_our_back_wins_over_a_stored_off` | `policy.rs` |
-| `a_stored_opt_in_with_a_vanished_registration_is_re_asserted` | `policy.rs` |
-| `reconciliation_never_asks_to_register_what_is_already_registered` | `policy.rs` |
-| `the_hidden_flag_marks_a_login_item_launch` | `policy.rs` |
-| `a_similar_looking_argument_does_not_count` | `policy.rs` |
-| `autostart_across_a_fresh_install_opt_in_and_restart` | `tests/lifecycle_policy.rs` |
-| `autostart_reflects_a_login_item_added_in_system_settings` | `tests/lifecycle_policy.rs` |
-| `autostart_restores_an_opt_in_whose_registration_disappeared` | `tests/lifecycle_policy.rs` |
-| `the_toggle_round_trips_through_the_config_file` | `tests/lifecycle_policy.rs` |
-| `registers the login item when switched on` | `ui/src/App.test.tsx` |
-| `removes the login item when switched off` | `ui/src/App.test.tsx` |
-| `reverts and explains when registration fails` | `ui/src/App.test.tsx` |
+Every case for this feature is in the test catalog — the [`LOGIN` cases](../../tests/catalog.md#launch-at-login--login). The automated tests that
+carry each ID, with their files, are listed in the generated
+[inventory](../../tests/inventory.md); `npm run test:catalog` keeps the two in step.
 
-Reboot-dependent checks are in
-[the functional checklist](../../tests/functional-checklist.md#module-autostartrs).
+| Case | Behaviour | Status | Levels |
+|---|---|---|---|
+| [LOGIN-001](../../tests/cases/login/LOGIN-001-fresh-install-off.md) | First launch -> the toggle reads off and no plist exists | automated | unit, component, e2e |
+| [LOGIN-002](../../tests/cases/login/LOGIN-002-toggle-on-creates-plist.md) | Turn the toggle on -> ~/Library/LaunchAgents/jira-to-qa-portal.plist appears | automated | component, e2e |
+| [LOGIN-003](../../tests/cases/login/LOGIN-003-plist-arguments.md) | Inspect the plist -> ProgramArguments point into /Applications and include --hidden | partial | e2e, manual |
+| [LOGIN-004](../../tests/cases/login/LOGIN-004-system-settings-listing.md) | Open Login Items -> the app is listed under Allow in the Background | manual | manual |
+| [LOGIN-005](../../tests/cases/login/LOGIN-005-launchctl-loaded.md) | launchctl print the job -> it is loaded | manual | manual |
+| [LOGIN-006](../../tests/cases/login/LOGIN-006-survives-restart.md) | Quit and relaunch with the toggle on -> still on, exactly one plist | automated | unit, e2e |
+| [LOGIN-007](../../tests/cases/login/LOGIN-007-starts-at-login.md) | Log out and back in (or reboot) -> the app starts automatically | manual | manual |
+| [LOGIN-008](../../tests/cases/login/LOGIN-008-starts-hidden.md) | Start by the login item -> starts hidden: tray icon, no window, no Dock icon | partial | unit, manual |
+| [LOGIN-009](../../tests/cases/login/LOGIN-009-login-start-cost.md) | Time a login start -> app ready without visibly delaying login | manual | manual, perf |
+| [LOGIN-010](../../tests/cases/login/LOGIN-010-toggle-off-removes-plist.md) | Turn the toggle off -> the plist is removed | automated | component, e2e |
+| [LOGIN-011](../../tests/cases/login/LOGIN-011-off-survives-reboot.md) | Reboot after turning it off -> the app does not start | manual | manual |
+| [LOGIN-012](../../tests/cases/login/LOGIN-012-external-registration-wins.md) | Added in System Settings while the toggle is off, then restart -> toggle reads on | partial | unit, component, e2e, manual |
+| [LOGIN-013](../../tests/cases/login/LOGIN-013-deleted-plist-recreated.md) | Plist deleted by hand while on, then restart -> toggle reads on and the plist is re-created | automated | unit, e2e |
+| [LOGIN-014](../../tests/cases/login/LOGIN-014-dev-path-warning.md) | Toggle on in tauri dev -> the log warns about a development binary | automated | e2e |
+| LOGIN-015 | Manual launch (no --hidden, or a look-alike argument) -> the window opens | automated | unit |
+| LOGIN-016 | Fresh install with a login item already registered -> toggle reads on, nothing re-registered | automated | unit |
+
+`manual` and `partial` cases are run by hand before a release, from their case files; see
+[Before a release](../../tests/README.md#before-a-release).
+

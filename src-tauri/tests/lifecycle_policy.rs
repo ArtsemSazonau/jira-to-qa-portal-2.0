@@ -29,6 +29,7 @@ fn freshly_launched() -> LifecycleState {
 
 // --- whole scenarios -------------------------------------------------------
 
+// case: HIDE-006
 #[test]
 fn closing_the_window_then_clicking_the_tray_reuses_the_same_window() {
     let mut state = freshly_launched();
@@ -52,6 +53,7 @@ fn closing_the_window_then_clicking_the_tray_reuses_the_same_window() {
     assert_eq!(decide(Trigger::TrayShowRequested, state), Action::FocusOnly);
 }
 
+// case: QUIT-001
 #[test]
 fn cmd_q_quits_even_though_macos_closes_the_window_on_the_way_out() {
     let mut state = freshly_launched();
@@ -68,6 +70,7 @@ fn cmd_q_quits_even_though_macos_closes_the_window_on_the_way_out() {
     );
 }
 
+// case: QUIT-004
 #[test]
 fn the_tray_quit_item_follows_the_same_path_as_cmd_q() {
     let mut state = freshly_launched();
@@ -83,6 +86,7 @@ fn the_tray_quit_item_follows_the_same_path_as_cmd_q() {
     );
 }
 
+// case: TRAY-010
 #[test]
 fn without_a_tray_the_app_never_hides_itself_out_of_reach() {
     // The failure mode this guards: hidden + Accessory + no tray icon = no way
@@ -97,6 +101,7 @@ fn without_a_tray_the_app_never_hides_itself_out_of_reach() {
     assert_eq!(decide(Trigger::TrayQuit, state), Action::Exit);
 }
 
+// case: INST-001, INST-005
 #[test]
 fn relaunching_from_finder_reveals_the_hidden_window() {
     let hidden = LifecycleState {
@@ -123,6 +128,7 @@ fn relaunching_from_finder_reveals_the_hidden_window() {
     );
 }
 
+// case: QUIT-011
 #[test]
 fn no_trigger_from_outside_can_produce_an_exit_without_a_quit() {
     let hidden = LifecycleState {
@@ -131,6 +137,7 @@ fn no_trigger_from_outside_can_produce_an_exit_without_a_quit() {
     };
     for trigger in [
         Trigger::WindowCloseRequested,
+        Trigger::HideRequested,
         Trigger::TrayShowRequested,
         Trigger::SecondInstanceLaunched,
         Trigger::Reopen {
@@ -152,6 +159,7 @@ fn no_trigger_from_outside_can_produce_an_exit_without_a_quit() {
 
 // --- tray menu surface -----------------------------------------------------
 
+// case: TRAY-002
 #[test]
 fn the_tray_menu_offers_both_a_way_in_and_a_way_out() {
     let ids = tray_menu_item_ids();
@@ -163,6 +171,7 @@ fn the_tray_menu_offers_both_a_way_in_and_a_way_out() {
 
 // --- autostart over a full install lifetime --------------------------------
 
+// case: LOGIN-001, LOGIN-006
 #[test]
 fn autostart_across_a_fresh_install_opt_in_and_restart() {
     // Fresh install: nothing stored, nothing registered → off, and the app does
@@ -180,6 +189,7 @@ fn autostart_across_a_fresh_install_opt_in_and_restart() {
     assert_eq!(after_restart.persist, None);
 }
 
+// case: LOGIN-012
 #[test]
 fn autostart_reflects_a_login_item_added_in_system_settings() {
     let resolved = reconcile_autostart(Some(false), true);
@@ -191,6 +201,7 @@ fn autostart_reflects_a_login_item_added_in_system_settings() {
     );
 }
 
+// case: LOGIN-013
 #[test]
 fn autostart_restores_an_opt_in_whose_registration_disappeared() {
     let resolved = reconcile_autostart(Some(true), false);
@@ -200,6 +211,7 @@ fn autostart_restores_an_opt_in_whose_registration_disappeared() {
 
 // --- config persistence ----------------------------------------------------
 
+// case: CONF-002
 #[test]
 fn the_toggle_round_trips_through_the_config_file() {
     let dir = tempfile::tempdir().unwrap();
@@ -221,6 +233,7 @@ fn the_toggle_round_trips_through_the_config_file() {
     assert!(config::load(&path).autostart_enabled);
 }
 
+// case: NOTE-003
 #[test]
 fn the_one_time_notices_stop_after_their_flag_is_persisted() {
     let dir = tempfile::tempdir().unwrap();
@@ -238,6 +251,7 @@ fn the_one_time_notices_stop_after_their_flag_is_persisted() {
     ));
 }
 
+// case: NOTE-006
 #[test]
 fn the_first_run_prompt_is_skipped_when_autostart_is_already_on() {
     assert!(should_show_first_run_prompt(false, false));
@@ -246,6 +260,7 @@ fn the_first_run_prompt_is_skipped_when_autostart_is_already_on() {
 
 // --- launch mode -----------------------------------------------------------
 
+// case: LOGIN-008
 #[test]
 fn the_login_item_argument_is_what_starts_the_app_hidden() {
     assert!(launched_hidden([
@@ -264,6 +279,7 @@ fn the_login_item_argument_is_what_starts_the_app_hidden() {
 /// everywhere. If `lifecycle::macos` ever loses its `#[cfg]`, the
 /// `not(target_os = "macos")` half stops compiling on this crate's other
 /// targets.
+// case: SYS-006
 #[test]
 fn the_platform_adapter_is_gated_but_the_policy_is_not() {
     // Referencing the item is the assertion. Its signature is deliberately not

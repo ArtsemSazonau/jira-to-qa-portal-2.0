@@ -1,0 +1,25 @@
+{
+  "name": "e2e",
+  "private": true,
+  "type": "module",
+  "description": "End-to-end tests against the test build of the app. See documentation/tests/README.md.",
+  "scripts": {
+    "test": "wdio run ./wdio.conf.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "24.13.3",
+    "@wdio/appium-service": "9.30.1",
+    "@wdio/cli": "9.30.1",
+    "@wdio/globals": "9.29.1",
+    "@wdio/junit-reporter": "9.30.1",
+    "@wdio/local-runner": "9.30.1",
+    "@wdio/mocha-framework": "9.30.1",
+    "@wdio/spec-reporter": "9.30.1",
+    "@wdio/tauri-service": "1.4.0",
+    "appium": "3.7.0",
+    "appium-mac2-driver": "4.3.5",
+    "typescript": "6.0.2",
+    "webdriverio": "9.30.1"
+  }
+}

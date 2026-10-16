@@ -1,0 +1,8 @@
+# Git hooks, installed by `npm install` (lefthook's postinstall).
+#
+# pre-push runs the fast suite and blocks the push when it fails. Skipping it has to be explicit:
+# `LEFTHOOK=0 git push` or `git push --no-verify`. No pre-commit hook: commits stay instant.
+pre-push:
+  commands:
+    fast-suite:
+      run: npm run test:fast

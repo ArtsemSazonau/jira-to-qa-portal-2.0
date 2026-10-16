@@ -93,7 +93,7 @@ to **destroy the window on close and rebuild it on show**. See
 [the planned change](#planned-change-destroy-the-window-instead-of-hiding-it) below and the backlog
 item in [PLAN.md](../../../PLAN.md) §4. Until that ships, the retention above is the documented
 behaviour, and
-[the process accounting step](../../tests/performance.md#3-process-accounting--the-webview-is-the-bigger-half)
+[PERF-003](../../tests/cases/performance/PERF-003-process-accounting.md)
 is how it is re-measured.
 
 ## Edge cases handled
@@ -109,24 +109,28 @@ is how it is re-measured.
 
 ## Tests
 
-| Test | File |
-|---|---|
-| `close_on_a_visible_window_hides_it` | `policy.rs` |
-| `close_while_quitting_is_allowed_through` | `policy.rs` |
-| `close_without_a_tray_quits_rather_than_hiding` | `policy.rs` |
-| `a_tray_failure_never_produces_a_hide` | `policy.rs` |
-| `close_on_an_already_hidden_window_does_nothing` | `policy.rs` |
-| `showing_a_hidden_window_resolves_to_show_and_focus` | `policy.rs` |
-| `showing_an_already_visible_window_resolves_to_focus_only` | `policy.rs` |
-| `repeated_show_requests_never_ask_for_more_than_a_focus` | `policy.rs` |
-| `closing_the_window_then_clicking_the_tray_reuses_the_same_window` | `tests/lifecycle_policy.rs` |
-| `without_a_tray_the_app_never_hides_itself_out_of_reach` | `tests/lifecycle_policy.rs` |
-| `warns that closing quits when the tray could not be created` | `ui/src/App.test.tsx` |
+Every case for this feature is in the test catalog — the [`HIDE` cases](../../tests/catalog.md#hide-to-tray--hide). The automated tests that
+carry each ID, with their files, are listed in the generated
+[inventory](../../tests/inventory.md); `npm run test:catalog` keeps the two in step.
 
-Manual checks are in
-[the functional checklist](../../tests/functional-checklist.md#module-lifecyclemacosrs--hideshow);
-the 50-cycle show/hide leak test is
-[performance scenario 5](../../tests/performance.md#5-showhide-cycle-leak-test-50-cycles).
+| Case | Behaviour | Status | Levels |
+|---|---|---|---|
+| [HIDE-001](../../tests/cases/hide/HIDE-001-close-button-hides.md) | Click the red close button -> the window disappears instantly, nothing lands in the Dock | partial | unit, e2e, manual |
+| [HIDE-002](../../tests/cases/hide/HIDE-002-dock-icon-gone.md) | After a hide -> Dock icon gone, app absent from ⌘-Tab | automated | e2e |
+| [HIDE-003](../../tests/cases/hide/HIDE-003-tray-survives-hide.md) | After a hide -> the tray icon is still present | automated | e2e |
+| [HIDE-004](../../tests/cases/hide/HIDE-004-process-alive.md) | After a hide -> the process is still alive | automated | e2e |
+| [HIDE-005](../../tests/cases/hide/HIDE-005-show-restores-dock.md) | Tray Show Window after a hide -> Dock icon and ⌘-Tab entry return, window focused in front | automated | e2e |
+| [HIDE-006](../../tests/cases/hide/HIDE-006-same-window-restored.md) | Show after a hide -> the same window with its prior state, not a fresh one | automated | unit, e2e |
+| [HIDE-007](../../tests/cases/hide/HIDE-007-cmd-w-hides.md) | Press ⌘W with the window focused -> it hides, the app does not quit | automated | e2e |
+| [HIDE-008](../../tests/cases/hide/HIDE-008-hide-button.md) | Click "Hide to menu bar" in the window -> the window hides as with the close button | automated | unit, component, flow, e2e |
+| [HIDE-009](../../tests/cases/hide/HIDE-009-rapid-cycles.md) | Hide then show 5 times quickly -> never more than one window, always focused in front | automated | unit, e2e |
+| [HIDE-010](../../tests/cases/hide/HIDE-010-webview-retained.md) | Hide -> the three WebKit helpers are retained, about 45 MB between them | manual | manual, perf |
+| HIDE-011 | Hide requested with no tray, while hidden, or while quitting -> never quits, does nothing | automated | unit |
+| HIDE-012 | Close an already hidden window -> nothing happens | automated | unit |
+| [HIDE-013](../../tests/cases/hide/HIDE-013-pilot.md) | Launch -> close -> tray Show Window -> toggle launch at login -> setting persisted | automated | e2e |
+
+`manual` and `partial` cases are run by hand before a release, from their case files; see
+[Before a release](../../tests/README.md#before-a-release).
 
 ---
 
@@ -143,7 +147,7 @@ work in short-lived processes, an idle core otherwise. Destroying on close shoul
 footprint from ~73 MB to ~30 MB.
 
 A closed webview also cannot leak, which removes the entire concern behind
-[performance scenario 10](../../tests/performance.md#10-frontend-profiling--the-62-nobody-was-measuring)
+[PERF-010](../../tests/cases/performance/PERF-010-frontend-profiling.md)
 for the closed state. It still applies while the window is open.
 
 ### The precondition that decides whether this is worth doing
@@ -152,7 +156,7 @@ WebKit pools and caches its helper processes so a subsequent load is fast. **If 
 `window.close()`, this change buys nothing.** Measure before writing any code:
 
 ```bash
-# window open, helpers discovered as in performance.md
+# window open, helpers discovered as in documentation/tests/performance/README.md
 for p in $WK_PIDS; do ps -p $p -o pid=,comm= ; done   # three processes
 # close the window, then
 sleep 60
@@ -197,11 +201,11 @@ written about exactly the state this change enters deliberately: a live process 
 | `src-tauri/src/lifecycle/macos.rs` | `hide` becomes destroy; `show` learns to build; double-create guard |
 | `src-tauri/src/lifecycle/mod.rs` | `AppState` gains the second flag or the atomic enum |
 | `src-tauri/src/lib.rs` | `on_window_event` stops calling `prevent_close()` on the hide path |
-| `src-tauri/src/ipc_commands.rs` | `hide_main_window` — a good moment to move its `if` into the policy, as [automation-notes](../../tests/automation-notes.md) flags |
+| `src-tauri/src/ipc_commands.rs` | `hide_main_window` — applies `Trigger::HideRequested`; its decision already lives in the policy |
 | `src-tauri/tauri.conf.json` | The window block becomes a template for reconstruction |
 | `ui/` | No change |
 
-Tests and docs that change with it: `tests/lifecycle_policy.rs`, the H-series in the functional
-checklist (H4, H5 and H6 invert), performance scenarios 3 and 5 — scenario 5 stops being "memory
+Tests and docs that change with it: `tests/lifecycle_policy.rs`, the `HIDE` cases in the
+catalog (HIDE-004, HIDE-005 and HIDE-006 invert) and their e2e specs, PERF-003 and PERF-005 — PERF-005 stops being "memory
 returns to baseline" and becomes "reconstruction stays under N ms" — and the decisions table in
 [CLAUDE.md](../../../CLAUDE.md).

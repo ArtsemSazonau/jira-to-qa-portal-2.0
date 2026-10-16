@@ -95,17 +95,22 @@ OS registration, so reconciliation does not immediately re-adopt it.
 
 ## Tests
 
-| Test | File |
-|---|---|
-| `default_is_all_off` | `config.rs` |
-| `reading_with_no_store_present_returns_the_default` | `config.rs` |
-| `writing_then_reading_returns_the_same_value` | `config.rs` |
-| `save_creates_missing_parent_directories` | `config.rs` |
-| `save_leaves_no_temp_file_behind` | `config.rs` |
-| `a_corrupt_file_is_an_error_for_try_load_but_defaults_for_load` | `config.rs` |
-| `unknown_and_missing_keys_do_not_break_the_read` | `config.rs` |
-| `config_path_appends_the_file_name` | `config.rs` |
-| `updating_the_config_writes_it_to_disk` | `lifecycle/mod.rs` |
-| `an_update_that_changes_nothing_does_not_touch_the_file` | `lifecycle/mod.rs` |
-| `snapshot_reflects_visibility_and_quit_flags` | `lifecycle/mod.rs` |
-| `the_toggle_round_trips_through_the_config_file` | `tests/lifecycle_policy.rs` |
+Every case for this feature is in the test catalog — the [`CONF` cases](../../tests/catalog.md#config--conf). The automated tests that
+carry each ID, with their files, are listed in the generated
+[inventory](../../tests/inventory.md); `npm run test:catalog` keeps the two in step.
+
+| Case | Behaviour | Status | Levels |
+|---|---|---|---|
+| [CONF-001](../../tests/cases/conf/CONF-001-file-created.md) | First launch -> app-config.json is created in Application Support | automated | e2e |
+| [CONF-002](../../tests/cases/conf/CONF-002-toggle-persisted.md) | Toggle autostart on and quit -> the file has "autostart_enabled": true | automated | unit, e2e |
+| [CONF-003](../../tests/cases/conf/CONF-003-corrupt-file.md) | Corrupt the file and relaunch -> app starts with defaults and logs a parse warning | automated | unit, e2e |
+| [CONF-004](../../tests/cases/conf/CONF-004-deleted-file.md) | Delete the file and relaunch -> app starts and the file is recreated | automated | unit, e2e |
+| [CONF-005](../../tests/cases/conf/CONF-005-unknown-key.md) | Add an unknown key by hand and relaunch -> app starts and ignores it | automated | unit, e2e |
+| [CONF-006](../../tests/cases/conf/CONF-006-no-temp-file.md) | Launch and toggle several times -> no .json.tmp left in the config dir | automated | unit, e2e |
+| [CONF-007](../../tests/cases/conf/CONF-007-read-only-dir.md) | Make the config dir read-only and toggle -> the toggle still works and the log carries "could not persist config" | automated | unit, e2e |
+| CONF-008 | An update that changes nothing -> the file is not written | automated | unit |
+| CONF-009 | No stored values -> every setting is off | automated | unit |
+
+`manual` and `partial` cases are run by hand before a release, from their case files; see
+[Before a release](../../tests/README.md#before-a-release).
+
