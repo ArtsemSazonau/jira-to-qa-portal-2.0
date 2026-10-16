@@ -50,16 +50,11 @@ pub fn show_main_window(app: AppHandle, state: State<'_, AppState>) {
 /// Hide the window to the menu bar, as if the close button had been clicked —
 /// including the one-time notice and the drop to `Accessory`.
 ///
-/// Only ever hides. The close button's decision also covers "no tray, so quit
-/// instead", and a button labelled *Hide to menu bar* must never quit the app.
+/// Only ever hides: [`Trigger::HideRequested`] resolves to `HideToTray` or
+/// `Nothing`, never the close button's "no tray, so quit instead".
 #[tauri::command]
 pub fn hide_main_window(app: AppHandle, state: State<'_, AppState>) {
-    let action = decide(Trigger::WindowCloseRequested, state.snapshot());
-    if action == Action::HideToTray {
-        apply(&app, action);
-    } else {
-        log::warn!("hide_main_window ignored: nothing to hide ({action:?})");
-    }
+    apply(&app, decide(Trigger::HideRequested, state.snapshot()));
 }
 
 /// Whether hide-to-tray is active. The UI uses it to explain that the close

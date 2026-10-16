@@ -46,7 +46,7 @@ beforeEach(() => {
 })
 
 describe('launch-at-login toggle', () => {
-  it('renders off when the app is not registered', async () => {
+  it('[LOGIN-001, UI-002] renders off when the app is not registered', async () => {
     backend({ autostart: false })
     render(<App />)
 
@@ -54,7 +54,7 @@ describe('launch-at-login toggle', () => {
     expect(toggle()).not.toBeChecked()
   })
 
-  it('reflects the real registration state rather than a default', async () => {
+  it('[LOGIN-012] reflects the real registration state rather than a default', async () => {
     // The user may have added the login item in System Settings; the toggle
     // must show what the OS actually has.
     backend({ autostart: true })
@@ -64,7 +64,7 @@ describe('launch-at-login toggle', () => {
     expect(mocked.getAutostartEnabled).toHaveBeenCalled()
   })
 
-  it('registers the login item when switched on', async () => {
+  it('[LOGIN-002] registers the login item when switched on', async () => {
     backend({ autostart: false })
     render(<App />)
     await waitFor(() => expect(toggle()).toBeEnabled())
@@ -76,7 +76,7 @@ describe('launch-at-login toggle', () => {
     await waitFor(() => expect(toggle()).toBeChecked())
   })
 
-  it('removes the login item when switched off', async () => {
+  it('[LOGIN-010] removes the login item when switched off', async () => {
     backend({ autostart: true })
     render(<App />)
     await waitFor(() => expect(toggle()).toBeChecked())
@@ -88,7 +88,7 @@ describe('launch-at-login toggle', () => {
     await waitFor(() => expect(toggle()).not.toBeChecked())
   })
 
-  it('reverts and explains when registration fails', async () => {
+  it('[UI-009] reverts and explains when registration fails', async () => {
     backend({ autostart: false })
     render(<App />)
     await waitFor(() => expect(toggle()).toBeEnabled())
@@ -101,7 +101,7 @@ describe('launch-at-login toggle', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent(/permission denied/i)
   })
 
-  it('is disabled until the backend has answered', () => {
+  it('[UI-002] is disabled until the backend has answered', () => {
     // Never-resolving promises: the toggle must not be clickable before the
     // real state is known, or the first click would write a guess.
     mocked.getAutostartEnabled.mockReturnValue(new Promise(() => {}))
@@ -111,7 +111,7 @@ describe('launch-at-login toggle', () => {
     expect(toggle()).toBeDisabled()
   })
 
-  it('explains itself when there is no backend at all', async () => {
+  it('[UI-007] explains itself when there is no backend at all', async () => {
     mocked.getAutostartEnabled.mockRejectedValue(new Error('not in Tauri'))
     mocked.getTrayAvailable.mockRejectedValue(new Error('not in Tauri'))
     render(<App />)
@@ -119,21 +119,62 @@ describe('launch-at-login toggle', () => {
     expect(await screen.findByRole('status')).toHaveTextContent(/backend is not available/i)
     expect(toggle()).toBeDisabled()
   })
+
+  it('[UI-010] stays disabled while a save is in flight', async () => {
+    backend({ autostart: false })
+    render(<App />)
+    await waitFor(() => expect(toggle()).toBeEnabled())
+
+    // Hold the save open: a second click before it settles would race it.
+    let finishSave!: () => void
+    mocked.setAutostartEnabled.mockReturnValue(new Promise<void>((resolve) => (finishSave = resolve)))
+    mocked.getAutostartEnabled.mockResolvedValue(true)
+    await userEvent.click(toggle())
+
+    expect(toggle()).toBeDisabled()
+    finishSave()
+    await waitFor(() => expect(toggle()).toBeEnabled())
+    expect(toggle()).toBeChecked()
+  })
+
+  it('[UI-011] clears a previous error after a successful toggle', async () => {
+    backend({ autostart: false })
+    render(<App />)
+    await waitFor(() => expect(toggle()).toBeEnabled())
+
+    mocked.setAutostartEnabled.mockRejectedValueOnce('permission denied')
+    await userEvent.click(toggle())
+    expect(await screen.findByRole('alert')).toHaveTextContent(/permission denied/i)
+    await waitFor(() => expect(toggle()).toBeEnabled())
+
+    mocked.getAutostartEnabled.mockResolvedValue(true)
+    await userEvent.click(toggle())
+
+    await waitFor(() => expect(toggle()).toBeChecked())
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
 })
 
 describe('hide-to-tray affordances', () => {
-  it('offers a hide button and explains how to quit', async () => {
+  it('[UI-001] offers a hide button and explains how to quit', async () => {
     backend({ tray: true })
     render(<App />)
 
-    const hide = await screen.findByRole('button', { name: /hide to menu bar/i })
-    await userEvent.click(hide)
-
-    expect(mocked.hideMainWindow).toHaveBeenCalledOnce()
+    expect(await screen.findByRole('button', { name: /hide to menu bar/i })).toBeInTheDocument()
     expect(screen.getByText(/⌘Q/)).toBeInTheDocument()
   })
 
-  it('warns that closing quits when the tray could not be created', async () => {
+  it('[HIDE-008] asks the backend to hide the window when the hide button is clicked', async () => {
+    backend({ tray: true })
+    render(<App />)
+
+    await userEvent.click(await screen.findByRole('button', { name: /hide to menu bar/i }))
+
+    expect(mocked.hideMainWindow).toHaveBeenCalledExactlyOnceWith()
+    expect(mocked.setAutostartEnabled).not.toHaveBeenCalled()
+  })
+
+  it('[TRAY-010] warns that closing quits when the tray could not be created', async () => {
     backend({ tray: false })
     render(<App />)
 

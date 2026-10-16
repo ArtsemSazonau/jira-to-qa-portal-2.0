@@ -108,6 +108,7 @@ mod tests {
         AppState::new(config::config_path(dir), AppConfig::default(), true)
     }
 
+    // case: TRAY-010
     #[test]
     fn a_fresh_state_assumes_no_tray_until_one_is_registered() {
         let dir = tempdir().unwrap();
@@ -134,6 +135,7 @@ mod tests {
         assert!(snapshot.is_quitting);
     }
 
+    // case: CONF-002
     #[test]
     fn updating_the_config_writes_it_to_disk() {
         let dir = tempdir().unwrap();
@@ -151,6 +153,7 @@ mod tests {
         );
     }
 
+    // case: CONF-008
     #[test]
     fn an_update_that_changes_nothing_does_not_touch_the_file() {
         let dir = tempdir().unwrap();

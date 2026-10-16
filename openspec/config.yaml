@@ -10,6 +10,20 @@ schema: spec-driven
 #     Write all artifacts in Spanish
 
 # Per-artifact rules (optional)
+rules:
+  tasks:
+    - >-
+      A change with UI or cross-process behaviour (the window, the tray, the Dock, launch at login,
+      another process, an external system) includes tasks to add or update its UI-flow scenarios
+      (ui/flows) and end-to-end scenarios (e2e/specs), each tagged with its catalog case ID.
+    - >-
+      Every change that alters behaviour includes a task to add or update its cases in
+      documentation/tests/catalog.md, the case files under documentation/tests/cases/, and the
+      generated inventory (npm run test:catalog -- --write).
+    - >-
+      Every change that alters behaviour ends with a task to run npm run test:regression and see it
+      green before the change is called done. See documentation/tests/README.md.
+
 # Add custom rules for specific artifacts.
 # Example:
 #   rules:

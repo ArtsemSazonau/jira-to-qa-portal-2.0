@@ -27,14 +27,14 @@ beforeEach(() => {
 })
 
 describe('ipc wrappers', () => {
-  it('reads the autostart state with no arguments', async () => {
+  it('[IPC-001] reads the autostart state with no arguments', async () => {
     mockedInvoke.mockResolvedValue(true)
 
     await expect(getAutostartEnabled()).resolves.toBe(true)
     expect(mockedInvoke).toHaveBeenCalledExactlyOnceWith('get_autostart_enabled')
   })
 
-  it('passes the new value when setting autostart', async () => {
+  it('[IPC-001] passes the new value when setting autostart', async () => {
     await setAutostartEnabled(true)
     expect(mockedInvoke).toHaveBeenCalledExactlyOnceWith('set_autostart_enabled', {
       enabled: true,
@@ -47,7 +47,7 @@ describe('ipc wrappers', () => {
     })
   })
 
-  it('propagates a rejection from the backend', async () => {
+  it('[IPC-002] propagates a rejection from the backend', async () => {
     mockedInvoke.mockRejectedValue('could not write the LaunchAgent plist')
 
     await expect(setAutostartEnabled(true)).rejects.toBe(
@@ -55,14 +55,14 @@ describe('ipc wrappers', () => {
     )
   })
 
-  it('reads tray availability', async () => {
+  it('[IPC-001] reads tray availability', async () => {
     mockedInvoke.mockResolvedValue(false)
 
     await expect(getTrayAvailable()).resolves.toBe(false)
     expect(mockedInvoke).toHaveBeenCalledExactlyOnceWith('get_tray_available')
   })
 
-  it('calls the window commands by their registered names', async () => {
+  it('[IPC-001] calls the window commands by their registered names', async () => {
     await hideMainWindow()
     expect(mockedInvoke).toHaveBeenCalledWith('hide_main_window')
 

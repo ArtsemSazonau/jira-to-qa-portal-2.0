@@ -99,22 +99,29 @@ that routes between them. The `lib/ipc.ts` boundary stays exactly as it is.
 
 ## Tests
 
-| Test | File |
-|---|---|
-| `renders off when the app is not registered` | `App.test.tsx` |
-| `reflects the real registration state rather than a default` | `App.test.tsx` |
-| `registers the login item when switched on` | `App.test.tsx` |
-| `removes the login item when switched off` | `App.test.tsx` |
-| `reverts and explains when registration fails` | `App.test.tsx` |
-| `is disabled until the backend has answered` | `App.test.tsx` |
-| `explains itself when there is no backend at all` | `App.test.tsx` |
-| `offers a hide button and explains how to quit` | `App.test.tsx` |
-| `warns that closing quits when the tray could not be created` | `App.test.tsx` |
-| `reads the autostart state with no arguments` | `lib/ipc.test.ts` |
-| `passes the new value when setting autostart` | `lib/ipc.test.ts` |
-| `propagates a rejection from the backend` | `lib/ipc.test.ts` |
-| `reads tray availability` | `lib/ipc.test.ts` |
-| `calls the window commands by their registered names` | `lib/ipc.test.ts` |
+Every case for this feature is in the test catalog — the [`UI` cases](../../tests/catalog.md#settings-ui--ui) and [`IPC` cases](../../tests/catalog.md#ipc--ipc). The automated tests that
+carry each ID, with their files, are listed in the generated
+[inventory](../../tests/inventory.md); `npm run test:catalog` keeps the two in step.
 
-Appearance checks — dark mode, Retina, window resize — are in
-[the functional checklist](../../tests/functional-checklist.md#module-ui).
+| Case | Behaviour | Status | Levels |
+|---|---|---|---|
+| [UI-001](../../tests/cases/ui/UI-001-initial-render.md) | Open the window -> heading, subtitle, Launch at login row, hide button and its explanation | partial | component, flow, manual |
+| [UI-002](../../tests/cases/ui/UI-002-disabled-until-answered.md) | Open the window -> the toggle is briefly disabled, then interactive | partial | component, flow, manual |
+| [UI-003](../../tests/cases/ui/UI-003-dark-appearance.md) | Switch macOS to Dark appearance with the window open -> colours follow, text readable, switch visible in both states | partial | flow, manual |
+| [UI-004](../../tests/cases/ui/UI-004-narrow-window.md) | Resize the window narrow -> no horizontal overflow | partial | flow, manual |
+| [UI-005](../../tests/cases/ui/UI-005-keyboard-toggle.md) | Tab to the switch and press Space -> it toggles | partial | flow, manual |
+| [UI-006](../../tests/cases/ui/UI-006-voiceover.md) | Focus the switch with VoiceOver on -> announced as a switch named "Launch at login" with its state | partial | component, manual |
+| [UI-007](../../tests/cases/ui/UI-007-no-backend.md) | Open the frontend in a plain browser -> "desktop backend is not available" message, toggle disabled | automated | component, flow |
+| [UI-008](../../tests/cases/ui/UI-008-retina.md) | Window on a Retina display -> text and the switch are sharp | manual | manual |
+| UI-009 | Registration fails -> the toggle reverts and an alert shows the message | automated | component, flow |
+| UI-010 | Toggle while a save is in flight -> the switch is disabled until it settles | automated | component |
+| UI-011 | Successful toggle after a failure -> the previous error clears | automated | component |
+| UI-012 | Render the panel -> axe finds no violations | automated | component |
+| IPC-001 | Call each lib/ipc.ts wrapper -> it invokes the registered command name with the right arguments | automated | component |
+| IPC-002 | Backend rejects a command -> the wrapper rejects with the same message | automated | component |
+| IPC-003 | Compare lib/ipc.ts with the Rust handler list -> the same command names on both sides | automated | component |
+| IPC-004 | Compare the test-build handler list with production -> production plus e2e_* names only | automated | component |
+
+`manual` and `partial` cases are run by hand before a release, from their case files; see
+[Before a release](../../tests/README.md#before-a-release).
+

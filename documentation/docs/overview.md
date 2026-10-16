@@ -64,8 +64,14 @@ Tracked in [PLAN.md §4](../../PLAN.md#4-фичи), roughly in the order they ar
 
 | Kind | Where | Count |
 |---|---|---|
-| Rust unit (pure policy, config, state) | `src-tauri/src/**/mod tests` | 42 |
-| Rust integration (public API, whole scenarios) | `src-tauri/tests/lifecycle_policy.rs` | 15 |
-| UI (IPC wrappers, settings panel) | `ui/src/**/*.test.{ts,tsx}` | 14 |
-| Manual (menu bar, Dock, reboot, appearance) | [../tests/functional-checklist.md](../tests/functional-checklist.md) | 47 checks |
-| Performance / load / stability | [../tests/performance.md](../tests/performance.md) | 10 scenarios |
+| Rust unit (pure policy incl. property tests, config, state, notice wording) | `src-tauri/src/**/mod tests` | 56 |
+| Rust integration (public API, whole scenarios; capability guard) | `src-tauri/tests/lifecycle_policy.rs`, `capabilities.rs` | 15 + 3 |
+| UI (IPC wrappers and contract, settings panel, accessibility) | `ui/src/**/*.test.{ts,tsx}` | 25 |
+| UI flows (WebKit, scripted backend, light/dark screenshots) | `ui/flows/*.flow.ts` | 10 |
+| End to end (the built test app: window, tray, Dock, login item, single instance) | `e2e/specs/*.e2e.ts` | 41 in 8 spec files |
+| Release smoke (no test code in the release; launch, tray, quit) | `scripts/test/release-smoke.sh` | 7 steps |
+| Manual (appearance, reboot, login, VoiceOver, banners) | `manual` and `partial` cases in [../tests/catalog.md](../tests/catalog.md) | 17 manual, 21 partial |
+| Performance / load / stability | [../tests/cases/performance/](../tests/cases/performance/) | 12 cases |
+
+Every case, its status and the tests that carry it are in [../tests/catalog.md](../tests/catalog.md);
+the strategy is [../tests/README.md](../tests/README.md).

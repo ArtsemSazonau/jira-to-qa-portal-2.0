@@ -30,6 +30,16 @@ tauri-plugin-log = "2"
 tauri-plugin-autostart = "2"
 tauri-plugin-notification = "2"
 tauri-plugin-single-instance = "2"
+# Test build only (`--features e2e`): serves WebDriver from inside the app. Pinned to match the
+# `@wdio/tauri-service` version in e2e/package.json.
+tauri-plugin-wdio-webdriver = { version = "=1.4.0", optional = true }
+
+[features]
+# The test build: WebDriver access and the `e2e_*` IPC commands. Off by default, so neither a release
+# build nor `tauri dev` contains any of it. Built by `npm run build:e2e`.
+e2e = ["dep:tauri-plugin-wdio-webdriver"]
 
 [dev-dependencies]
 tempfile = "3"
+# Property tests over `policy::decide`. `std` only: no fork/timeout machinery needed.
+proptest = { version = "1", default-features = false, features = ["std"] }

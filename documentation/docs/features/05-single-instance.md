@@ -70,14 +70,20 @@ that gap.
 
 ## Tests
 
-| Test | File |
-|---|---|
-| `a_second_instance_reveals_the_hidden_window` | `policy.rs` |
-| `reopen_shows_the_window_when_it_is_hidden` | `policy.rs` |
-| `reopen_focuses_when_the_window_is_already_up` | `policy.rs` |
-| `reopen_shows_when_cocoa_and_our_own_state_disagree` | `policy.rs` |
-| `repeated_show_requests_never_ask_for_more_than_a_focus` | `policy.rs` |
-| `relaunching_from_finder_reveals_the_hidden_window` | `tests/lifecycle_policy.rs` |
+Every case for this feature is in the test catalog — the [`INST` cases](../../tests/catalog.md#single-instance--inst). The automated tests that
+carry each ID, with their files, are listed in the generated
+[inventory](../../tests/inventory.md); `npm run test:catalog` keeps the two in step.
 
-Manual checks are in
-[the functional checklist](../../tests/functional-checklist.md#module-single-instance--reopen).
+| Case | Behaviour | Status | Levels |
+|---|---|---|---|
+| [INST-001](../../tests/cases/inst/INST-001-finder-reopen-hidden.md) | Launch from Finder while running hidden -> the existing window appears, focused | partial | unit, e2e, manual |
+| [INST-002](../../tests/cases/inst/INST-002-one-process-one-icon.md) | After a Finder relaunch -> exactly one tray icon and one process | automated | e2e |
+| [INST-003](../../tests/cases/inst/INST-003-spotlight-reopen-visible.md) | Launch from Spotlight while visible -> the existing window comes forward, no second window | partial | unit, e2e, manual |
+| [INST-004](../../tests/cases/inst/INST-004-open-a-hidden.md) | open -a while hidden -> the window appears | automated | e2e |
+| [INST-005](../../tests/cases/inst/INST-005-second-process-exits.md) | Run the binary directly while an instance runs -> the second exits, the first reveals its window | automated | unit, e2e |
+| [INST-006](../../tests/cases/inst/INST-006-rapid-relaunch.md) | Relaunch from Finder 5 times quickly -> still one window and one tray icon | partial | e2e, manual |
+| INST-007 | Cocoa says a window is visible but ours is hidden -> the window is shown | automated | unit |
+
+`manual` and `partial` cases are run by hand before a release, from their case files; see
+[Before a release](../../tests/README.md#before-a-release).
+

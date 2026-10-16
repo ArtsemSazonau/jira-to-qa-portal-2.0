@@ -33,6 +33,9 @@ pub const TRAY_MENU_ITEMS: &[Option<(&str, &str)>] = &[
 pub enum Trigger {
     /// The red close button or ⌘W.
     WindowCloseRequested,
+    /// The window's own *Hide to menu bar* button. Unlike a close, it can only
+    /// ever hide: a button with that label must never quit the app.
+    HideRequested,
     /// The tray menu's Quit item.
     TrayQuit,
     /// ⌘Q, the app menu's Quit, or a Quit AppleEvent — i.e. `RunEvent::ExitRequested`.
@@ -97,6 +100,16 @@ pub fn decide(trigger: Trigger, state: LifecycleState) -> Action {
                 // behaviour, and ⌘Q reaches the same place.
                 Action::Exit
             } else if state.window_visible {
+                Action::HideToTray
+            } else {
+                Action::Nothing
+            }
+        }
+
+        // Hides exactly when a close would, and does nothing in every case where
+        // a close would quit or pass through instead.
+        Trigger::HideRequested => {
+            if state.window_visible && state.tray_available && !state.is_quitting {
                 Action::HideToTray
             } else {
                 Action::Nothing
@@ -245,6 +258,7 @@ mod tests {
 
     // --- window close handler ------------------------------------------------
 
+    // case: HIDE-001
     #[test]
     fn close_on_a_visible_window_hides_it() {
         assert_eq!(
@@ -253,6 +267,7 @@ mod tests {
         );
     }
 
+    // case: QUIT-001
     #[test]
     fn close_while_quitting_is_allowed_through() {
         // ⌘Q reaches ExitRequested first, which sets is_quitting; the close macOS
@@ -267,6 +282,7 @@ mod tests {
         );
     }
 
+    // case: TRAY-010
     #[test]
     fn close_without_a_tray_quits_rather_than_hiding() {
         let state = LifecycleState {
@@ -276,6 +292,7 @@ mod tests {
         assert_eq!(decide(Trigger::WindowCloseRequested, state), Action::Exit);
     }
 
+    // case: TRAY-010
     #[test]
     fn a_tray_failure_never_produces_a_hide() {
         // The failure this guards: hidden + Accessory + no tray icon leaves no
@@ -296,11 +313,13 @@ mod tests {
         }
     }
 
+    // case: HIDE-012
     #[test]
     fn close_on_an_already_hidden_window_does_nothing() {
         assert_eq!(decide(Trigger::WindowCloseRequested, hidden()), Action::Nothing);
     }
 
+    // case: QUIT-003, QUIT-004
     #[test]
     fn quit_triggers_exit_regardless_of_window_state() {
         for state in [visible(), hidden()] {
@@ -309,6 +328,7 @@ mod tests {
         }
     }
 
+    // case: QUIT-010
     #[test]
     fn quit_exits_even_when_the_tray_is_unavailable() {
         let state = LifecycleState {
@@ -318,8 +338,46 @@ mod tests {
         assert_eq!(decide(Trigger::TrayQuit, state), Action::Exit);
     }
 
+    // --- hide button ---------------------------------------------------------
+
+    // case: HIDE-011
+    #[test]
+    fn the_hide_button_hides_a_visible_window() {
+        assert_eq!(decide(Trigger::HideRequested, visible()), Action::HideToTray);
+    }
+
+    // case: HIDE-011
+    #[test]
+    fn the_hide_button_does_nothing_when_already_hidden() {
+        assert_eq!(decide(Trigger::HideRequested, hidden()), Action::Nothing);
+    }
+
+    // case: HIDE-011
+    #[test]
+    fn the_hide_button_never_quits_even_without_a_tray() {
+        // A close without a tray quits; a button labelled *Hide to menu bar*
+        // must not, so it does nothing instead.
+        let state = LifecycleState {
+            tray_available: false,
+            ..visible()
+        };
+        assert_eq!(decide(Trigger::WindowCloseRequested, state), Action::Exit);
+        assert_eq!(decide(Trigger::HideRequested, state), Action::Nothing);
+    }
+
+    // case: HIDE-011
+    #[test]
+    fn the_hide_button_does_nothing_while_quitting() {
+        let state = LifecycleState {
+            is_quitting: true,
+            ..visible()
+        };
+        assert_eq!(decide(Trigger::HideRequested, state), Action::Nothing);
+    }
+
     // --- activation / show logic --------------------------------------------
 
+    // case: TRAY-005
     #[test]
     fn showing_a_hidden_window_resolves_to_show_and_focus() {
         assert_eq!(
@@ -328,11 +386,13 @@ mod tests {
         );
     }
 
+    // case: TRAY-004
     #[test]
     fn showing_an_already_visible_window_resolves_to_focus_only() {
         assert_eq!(decide(Trigger::TrayShowRequested, visible()), Action::FocusOnly);
     }
 
+    // case: HIDE-009
     #[test]
     fn repeated_show_requests_never_ask_for_more_than_a_focus() {
         // Guards the "double show" edge case: no action in the sequence creates
@@ -348,6 +408,7 @@ mod tests {
         );
     }
 
+    // case: INST-005
     #[test]
     fn a_second_instance_reveals_the_hidden_window() {
         assert_eq!(
@@ -356,6 +417,7 @@ mod tests {
         );
     }
 
+    // case: INST-001
     #[test]
     fn reopen_shows_the_window_when_it_is_hidden() {
         let trigger = Trigger::Reopen {
@@ -364,6 +426,7 @@ mod tests {
         assert_eq!(decide(trigger, hidden()), Action::ShowAndFocus);
     }
 
+    // case: INST-003
     #[test]
     fn reopen_focuses_when_the_window_is_already_up() {
         let trigger = Trigger::Reopen {
@@ -372,6 +435,7 @@ mod tests {
         assert_eq!(decide(trigger, visible()), Action::FocusOnly);
     }
 
+    // case: INST-007
     #[test]
     fn reopen_shows_when_cocoa_and_our_own_state_disagree() {
         // Cocoa can still count the hidden window as visible; our state wins.
@@ -383,26 +447,31 @@ mod tests {
 
     // --- tray menu -----------------------------------------------------------
 
+    // case: TRAY-002
     #[test]
     fn tray_menu_contains_exactly_the_expected_ids() {
         assert_eq!(tray_menu_item_ids(), vec![MENU_ID_SHOW, MENU_ID_QUIT]);
     }
 
+    // case: QUIT-003
     #[test]
     fn the_quit_menu_id_maps_to_the_app_exit_action() {
         assert_eq!(map_menu_event(MENU_ID_QUIT), Some(Action::Exit));
     }
 
+    // case: TRAY-005
     #[test]
     fn the_show_menu_id_maps_to_the_show_action() {
         assert_eq!(map_menu_event(MENU_ID_SHOW), Some(Action::ShowAndFocus));
     }
 
+    // case: TRAY-011
     #[test]
     fn an_unknown_menu_id_maps_to_nothing() {
         assert_eq!(map_menu_event("run-now"), None);
     }
 
+    // case: TRAY-002
     #[test]
     fn every_menu_label_is_non_empty() {
         for (id, label) in TRAY_MENU_ITEMS.iter().flatten() {
@@ -412,6 +481,7 @@ mod tests {
 
     // --- autostart reconciliation -------------------------------------------
 
+    // case: LOGIN-001
     #[test]
     fn a_fresh_install_with_no_registration_is_off() {
         let resolved = reconcile_autostart(None, false);
@@ -425,6 +495,7 @@ mod tests {
         );
     }
 
+    // case: LOGIN-016
     #[test]
     fn a_fresh_install_adopts_an_existing_registration() {
         let resolved = reconcile_autostart(None, true);
@@ -433,6 +504,7 @@ mod tests {
         assert_eq!(resolved.apply_to_os, None);
     }
 
+    // case: LOGIN-006
     #[test]
     fn agreement_needs_no_correction_in_either_direction() {
         for value in [true, false] {
@@ -449,6 +521,7 @@ mod tests {
         }
     }
 
+    // case: LOGIN-012
     #[test]
     fn registered_behind_our_back_wins_over_a_stored_off() {
         // Checklist 14: the user adds the app in System Settings while the
@@ -459,6 +532,7 @@ mod tests {
         assert_eq!(resolved.apply_to_os, None, "must not unregister the user's own entry");
     }
 
+    // case: LOGIN-013, SYS-003
     #[test]
     fn a_stored_opt_in_with_a_vanished_registration_is_re_asserted() {
         let resolved = reconcile_autostart(Some(true), false);
@@ -467,6 +541,7 @@ mod tests {
         assert_eq!(resolved.persist, None, "the stored value is already correct");
     }
 
+    // case: LOGIN-006
     #[test]
     fn reconciliation_never_asks_to_register_what_is_already_registered() {
         for stored in [None, Some(true), Some(false)] {
@@ -480,12 +555,14 @@ mod tests {
 
     // --- one-time notices ----------------------------------------------------
 
+    // case: NOTE-002, NOTE-003
     #[test]
     fn the_first_close_notice_shows_once() {
         assert!(should_show_first_close_notice(false));
         assert!(!should_show_first_close_notice(true));
     }
 
+    // case: NOTE-001, NOTE-004, NOTE-006
     #[test]
     fn the_first_run_prompt_shows_once_and_only_when_autostart_is_off() {
         assert!(should_show_first_run_prompt(false, false));
@@ -496,20 +573,125 @@ mod tests {
 
     // --- launch mode ---------------------------------------------------------
 
+    // case: LOGIN-008
     #[test]
     fn the_hidden_flag_marks_a_login_item_launch() {
         assert!(launched_hidden(["/Applications/app", HIDDEN_LAUNCH_FLAG]));
     }
 
+    // case: LOGIN-015
     #[test]
     fn a_manual_launch_has_no_hidden_flag() {
         assert!(!launched_hidden(["/Applications/app"]));
         assert!(!launched_hidden(Vec::<String>::new()));
     }
 
+    // case: LOGIN-015
     #[test]
     fn a_similar_looking_argument_does_not_count() {
         assert!(!launched_hidden(["/Applications/app", "--hidden-extra"]));
         assert!(!launched_hidden(["/Applications/app", "hidden"]));
+    }
+
+    // --- invariants over the whole state space -------------------------------
+    //
+    // The tests above pin individual decisions. These state the rules once, for
+    // every trigger and every state, so a new trigger or state flag cannot
+    // quietly break one.
+    mod properties {
+        use super::super::*;
+        use proptest::prelude::*;
+
+        fn any_state() -> impl Strategy<Value = LifecycleState> {
+            (any::<bool>(), any::<bool>(), any::<bool>()).prop_map(
+                |(window_visible, tray_available, is_quitting)| LifecycleState {
+                    window_visible,
+                    tray_available,
+                    is_quitting,
+                },
+            )
+        }
+
+        fn any_trigger() -> impl Strategy<Value = Trigger> {
+            prop_oneof![
+                Just(Trigger::WindowCloseRequested),
+                Just(Trigger::HideRequested),
+                Just(Trigger::TrayQuit),
+                Just(Trigger::AppQuit),
+                Just(Trigger::TrayShowRequested),
+                Just(Trigger::SecondInstanceLaunched),
+                any::<bool>().prop_map(|has_visible_windows| Trigger::Reopen {
+                    has_visible_windows
+                }),
+            ]
+        }
+
+        fn is_quit(trigger: Trigger) -> bool {
+            matches!(trigger, Trigger::TrayQuit | Trigger::AppQuit)
+        }
+
+        fn is_show(trigger: Trigger) -> bool {
+            matches!(
+                trigger,
+                Trigger::TrayShowRequested
+                    | Trigger::SecondInstanceLaunched
+                    | Trigger::Reopen { .. }
+            )
+        }
+
+        proptest! {
+            // case: TRAY-010
+            #[test]
+            fn without_a_tray_nothing_hides(trigger in any_trigger(), state in any_state()) {
+                let state = LifecycleState { tray_available: false, ..state };
+                prop_assert_ne!(decide(trigger, state), Action::HideToTray);
+            }
+
+            // case: QUIT-001
+            #[test]
+            fn while_quitting_a_close_is_let_through(state in any_state()) {
+                let state = LifecycleState { is_quitting: true, ..state };
+                prop_assert_eq!(decide(Trigger::WindowCloseRequested, state), Action::AllowClose);
+            }
+
+            // case: QUIT-010
+            #[test]
+            fn a_quit_trigger_always_exits(trigger in any_trigger(), state in any_state()) {
+                prop_assume!(is_quit(trigger));
+                prop_assert_eq!(decide(trigger, state), Action::Exit);
+            }
+
+            // Exit comes from a quit trigger, or from a close with no tray to
+            // hide into (the documented no-tray fallback). Nothing else.
+            // case: QUIT-011
+            #[test]
+            fn only_a_quit_or_a_tray_less_close_exits(trigger in any_trigger(), state in any_state()) {
+                if decide(trigger, state) == Action::Exit {
+                    prop_assert!(
+                        is_quit(trigger)
+                            || (trigger == Trigger::WindowCloseRequested && !state.tray_available),
+                        "{trigger:?} exited in {state:?}"
+                    );
+                }
+            }
+
+            // case: HIDE-009
+            #[test]
+            fn a_show_request_never_does_more_than_show_and_focus(trigger in any_trigger(), state in any_state()) {
+                prop_assume!(is_show(trigger));
+                let action = decide(trigger, state);
+                prop_assert!(
+                    matches!(action, Action::ShowAndFocus | Action::FocusOnly),
+                    "{trigger:?} in {state:?} gave {action:?}"
+                );
+            }
+
+            // case: HIDE-011
+            #[test]
+            fn the_hide_button_only_ever_hides_or_does_nothing(state in any_state()) {
+                let action = decide(Trigger::HideRequested, state);
+                prop_assert!(matches!(action, Action::HideToTray | Action::Nothing), "{action:?}");
+            }
+        }
     }
 }

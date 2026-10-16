@@ -48,7 +48,7 @@ report generator comes later. See [PLAN.md](PLAN.md) §2–3.
 Heavy work — browser automation, LLM inference — lives in short-lived external processes. The Tauri
 core stays idle otherwise: a tray icon and a sleeping scheduler, no Chromium and no Node. Every
 feature added to the core is measured against the idle baseline recorded in
-[documentation/tests/performance.md](documentation/tests/performance.md).
+[documentation/tests/runs/performance-results.md](documentation/tests/runs/performance-results.md).
 
 ### The testability split
 
@@ -82,40 +82,51 @@ machine's network setup.
 
 ### Testing
 
-The whole automated suite, from the repo root. Each step runs in its own subshell so the working
-directory cannot drift between them, and `&&` stops at the first failure:
+The whole automated suite that needs no built app, from the repo root:
 
 ```bash
-(cd src-tauri && cargo test) \
-  && (cd src-tauri && cargo clippy --all-targets -- -D warnings) \
-  && (cd ui && npm test) \
-  && (cd ui && npm run build) \
-  && (cd ui && npm run lint) \
-  && echo "=== all green ==="
+npm run test:fast
 ```
+
+It runs each step in order, stops at the first failure, names it, and ends with a per-step summary.
+The `pre-push` hook runs the same command, installed by `npm install` through `lefthook`; skip it
+once with `LEFTHOOK=0 git push`.
 
 | Step | Covers | Expected |
 |---|---|---|
-| `cargo test` | policy decisions, config, lifecycle state, integration | 42 unit + 15 integration = **57 passed** |
+| `cargo test` | policy decisions and invariants, config, lifecycle state, notice wording, integration, capability guard | 56 unit + 18 integration = **74 passed** |
 | `cargo clippy --all-targets -- -D warnings` | the test targets too | nothing but `Finished` |
-| `npm test` (ui) | IPC wrappers and the settings panel, vitest in jsdom | **14 passed** across 2 files |
-| `npm run build` (ui) | `tsc -b && vite build`; type-checks all of `src`, tests included | `built in …` |
-| `npm run lint` (ui) | oxlint | `Found 0 warnings and 0 errors` |
+| `npm --prefix ui test` | IPC wrappers and contract, the settings panel, accessibility; vitest in jsdom | **25 passed** across 4 files |
+| `npm --prefix ui run build` | `tsc -b && vite build`; type-checks all of `src`, tests included | `built in …` |
+| mock leak check | the UI flows' scripted backend is absent from `ui/dist` | `mock leak check passed` |
+| `npm --prefix ui run lint` | oxlint | `Found 0 warnings and 0 errors` |
+| UI flows | Playwright in WebKit against a scripted backend; light/dark screenshot baselines | **10 passed** |
+| catalog check | the checker's own tests, then the [test catalog](documentation/tests/catalog.md) against the code | `catalog check passed` |
 
-About two minutes cold, seconds warm. Almost all of it is `cargo` building the test and clippy
-targets, which are separate artefacts from a normal build.
+Seconds warm; about two minutes cold, almost all of it `cargo` building the test and clippy targets.
+Run it in your own terminal — see the note on cargo and sandboxes above.
 
 > **`build` means two different things here.** At the repo root `npm run build` is `tauri build` —
-> the full release bundle, minutes. The one this suite wants is `ui/`'s, `tsc -b && vite build`,
-> under a second. And there is no `lint` script at the root at all. Hence the subshells.
+> the full release bundle, minutes. The suite's build step is `ui/`'s, `tsc -b && vite build`, under
+> a second.
 
-**Nothing runs these on its own.** There is no CI in this repo, and no build command runs a test:
-Rust drops `#[cfg(test)]` code from a normal build entirely, and `tauri build` only calls
-`tsc -b && vite build` for the frontend. A green build means the tests *compile*, not that they
-pass. A CI workflow and an automated e2e layer are planned, not built — the testing strategy is
-[PLAN.md](PLAN.md) §6, and
-[documentation/tests/automation-notes.md](documentation/tests/automation-notes.md) covers the options
-in more detail.
+| Command | Use it for |
+|---|---|
+| `npm run test:fast` | before every push (the hook does it) and during development |
+| `npm run test:flows` | the UI flows alone, while iterating on a screen |
+| `npm run test:catalog` | after changing a test's case tag or the catalog; `-- --write` regenerates the inventory |
+| `npm --prefix ui run test:watch` | watch mode for the UI while writing a feature |
+| `npm --prefix ui run test:coverage` | the UI coverage report; fails below the floor |
+| `npm run test:doctor` | checks Xcode, Appium, the Accessibility grant and the test build before e2e |
+| `npm run build:e2e` | builds the test variant (`jira-to-qa-portal-e2e.app`, WebDriver inside, own identity) |
+| `npm run test:e2e` | the end-to-end specs against the test variant; takes over the screen for ~2.5 min |
+| `npm run test:regression` | doctor → build:e2e → fast suite → e2e; before calling a change done |
+| `npm run test:release` | after `npm run tauri build`: no test code in the release, launch, tray, quit, no leftovers |
+
+**No build command runs a test.** Rust drops `#[cfg(test)]` code from a normal build entirely, and
+`tauri build` only calls `tsc -b && vite build` for the frontend. A green build means the tests
+*compile*, not that they pass. A CI workflow is planned, not built. The testing strategy — layers,
+tools, stages and the test catalog — is [documentation/tests/README.md](documentation/tests/README.md).
 
 The two interactive steps run separately, from the root:
 
@@ -245,5 +256,5 @@ rm ~/Library/LaunchAgents/jira-to-qa-portal.plist
 | [CLAUDE.md](CLAUDE.md) | Conventions, environment constraints, reference material for contributors. |
 | [src-tauri/CLAUDE.md](src-tauri/CLAUDE.md) | Tauri backend development — plugins, capabilities, events, gotchas. |
 | [documentation/docs/overview.md](documentation/docs/overview.md) | What is implemented today. |
-| [documentation/tests/](documentation/tests/) | Functional checklist and performance/load/stability tests. |
+| [documentation/tests/](documentation/tests/) | Testing strategy, the test catalog, manual and performance cases. |
 | [reference/legacy-script/](reference/legacy-script/) | The v1.0 console script being ported. Reference only. |
