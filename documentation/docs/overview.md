@@ -15,7 +15,8 @@ Windows and Linux are additive work rather than a rewrite.
 | 5 | [Single instance and reopen](features/05-single-instance.md) | Launching the app again focuses the running one instead of starting a second. | [→](features/05-single-instance.md) |
 | 6 | [One-time notifications](features/06-notifications.md) | Two informational notices: "still running in the menu bar", and the launch-at-login offer. | [→](features/06-notifications.md) |
 | 7 | [App configuration](features/07-app-config.md) | Preferences that survive restarts, stored as JSON outside the bundle. | [→](features/07-app-config.md) |
-| 8 | [Settings UI](features/08-settings-ui.md) | The window: the launch-at-login toggle and the hide affordance. | [→](features/08-settings-ui.md) |
+| 8 | [Settings UI](features/08-settings-ui.md) | The launch-at-login toggle and the hide affordance. | [→](features/08-settings-ui.md) |
+| 9 | [Window tabs](features/09-window-tabs.md) | Four tabs — Settings, QA Portal sync, Timesheet, GitHub jobs — with previews of the features to come, marked as not wired yet. | [→](features/09-window-tabs.md) |
 
 ## How they fit together
 

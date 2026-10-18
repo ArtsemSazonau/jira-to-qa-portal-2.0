@@ -43,6 +43,39 @@ export async function pageMark(): Promise<string | undefined> {
   return browser.execute(() => (window as unknown as { __e2eMarker?: string }).__e2eMarker)
 }
 
+/** The window's tabs, by visible name, with the id suffix `components/Tabs.tsx` gives each. */
+export const TABS = {
+  Settings: 'settings',
+  'QA Portal sync': 'sync',
+  Timesheet: 'timesheet',
+  'GitHub jobs': 'github',
+} as const
+
+export type TabName = keyof typeof TABS
+
+/** The tab names in the order the tab list shows them. */
+export async function tabNames(): Promise<string[]> {
+  await focusMainWindow()
+  return $$('[role="tab"]').map((el) => el.getText())
+}
+
+/** The name of the selected tab. */
+export async function selectedTab(): Promise<string> {
+  await focusMainWindow()
+  return $('[role="tab"][aria-selected="true"]').getText()
+}
+
+export async function selectTab(name: TabName) {
+  await focusMainWindow()
+  await $(`#tab-${TABS[name]}`).click()
+}
+
+/** Whether a tab's panel is on screen (inactive panels are `hidden`). */
+export async function isPanelShown(name: TabName): Promise<boolean> {
+  await focusMainWindow()
+  return $(`#panel-${TABS[name]}`).isDisplayed()
+}
+
 export async function clickHideButton() {
   await focusMainWindow()
   await $('button=Hide to menu bar').click()

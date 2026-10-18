@@ -151,12 +151,12 @@ Feature: [Settings UI](../docs/features/08-settings-ui.md).
 
 | ID | Case | Levels | Status | Module | Feature | File |
 |---|---|---|---|---|---|---|
-| UI-001 | [Settings UI][Layout] Open the window -> heading, subtitle, Launch at login row, hide button and its explanation | component, flow, manual | partial | `App.tsx` | [Settings UI](../docs/features/08-settings-ui.md) | [UI-001](cases/ui/UI-001-initial-render.md) |
+| UI-001 | [Settings UI][Layout] Open the window -> heading, subtitle, tabs, Launch at login row on the Settings tab, hide button and its explanation | component, flow, manual | partial | `App.tsx` | [Settings UI](../docs/features/08-settings-ui.md) | [UI-001](cases/ui/UI-001-initial-render.md) |
 | UI-002 | [Settings UI][Loading] Open the window -> the toggle is briefly disabled, then interactive | component, flow, manual | partial | `App.tsx` | [Settings UI](../docs/features/08-settings-ui.md) | [UI-002](cases/ui/UI-002-disabled-until-answered.md) |
 | UI-003 | [Settings UI][Appearance] Switch macOS to Dark appearance with the window open -> colours follow, text readable, switch visible in both states | flow, manual | partial | `App.css` | [Settings UI](../docs/features/08-settings-ui.md) | [UI-003](cases/ui/UI-003-dark-appearance.md) |
 | UI-004 | [Settings UI][Layout] Resize the window narrow -> no horizontal overflow | flow, manual | partial | `App.css` | [Settings UI](../docs/features/08-settings-ui.md) | [UI-004](cases/ui/UI-004-narrow-window.md) |
 | UI-005 | [Settings UI][Keyboard] Tab to the switch and press Space -> it toggles | flow, manual | partial | `App.tsx` | [Settings UI](../docs/features/08-settings-ui.md) | [UI-005](cases/ui/UI-005-keyboard-toggle.md) |
-| UI-006 | [Settings UI][Accessibility] Focus the switch with VoiceOver on -> announced as a switch named "Launch at login" with its state | component, manual | partial | `App.tsx` | [Settings UI](../docs/features/08-settings-ui.md) | [UI-006](cases/ui/UI-006-voiceover.md) |
+| UI-006 | [Settings UI][Accessibility] Focus the switch with VoiceOver on -> announced as a switch named "Launch at login" with its state | component, manual | partial | `views/SettingsView.tsx` | [Settings UI](../docs/features/08-settings-ui.md) | [UI-006](cases/ui/UI-006-voiceover.md) |
 | UI-007 | [Settings UI][No backend] Open the frontend in a plain browser -> "desktop backend is not available" message, toggle disabled | component, flow | automated | `App.tsx` | [Settings UI](../docs/features/08-settings-ui.md) | [UI-007](cases/ui/UI-007-no-backend.md) |
 | UI-008 | [Settings UI][Rendering] Window on a Retina display -> text and the switch are sharp | manual | manual | `App.css` | [Settings UI](../docs/features/08-settings-ui.md) | [UI-008](cases/ui/UI-008-retina.md) |
 | UI-009 | [Settings UI][Errors] Registration fails -> the toggle reverts and an alert shows the message | component, flow | automated | `App.tsx` | [Settings UI](../docs/features/08-settings-ui.md) | — |
@@ -174,6 +174,109 @@ Feature: [Settings UI](../docs/features/08-settings-ui.md).
 | IPC-002 | [IPC][Wrappers] Backend rejects a command -> the wrapper rejects with the same message | component | automated | `lib/ipc.ts` | [Settings UI](../docs/features/08-settings-ui.md) | — |
 | IPC-003 | [IPC][Contract] Compare lib/ipc.ts with the Rust handler list -> the same command names on both sides | component | automated | `lib.rs + lib/ipc.ts` | [change](../../openspec/changes/archive/2026-10-16-build-test-pyramid/proposal.md) | — |
 | IPC-004 | [IPC][Contract] Compare the test-build handler list with production -> production plus e2e_* names only | component | automated | `lib.rs` | [change](../../openspec/changes/archive/2026-10-16-build-test-pyramid/proposal.md) | — |
+
+## Window tabs — `TAB`
+
+Feature: [Window tabs](../docs/features/09-window-tabs.md).
+
+| ID | Case | Levels | Status | Module | Feature | File |
+|---|---|---|---|---|---|---|
+| TAB-001 | [Window tabs][Order] Open the window -> tabs Settings, QA Portal sync, Timesheet, GitHub jobs, in that order | component | automated | `App.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| TAB-002 | [Window tabs][Default] Open the window -> Settings is selected and launch at login is visible without a click | component | automated | `App.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| TAB-003 | [Window tabs][Selection] Click a tab -> it is selected and only its panel is visible | component | automated | `components/Tabs.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| TAB-004 | [Window tabs][Keyboard] Press Left/Right on a tab -> the previous/next tab is focused and selected, wrapping; Home/End reach the ends | component, flow | automated | `components/Tabs.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| TAB-005 | [Window tabs][Keyboard] Press Tab on the selected tab -> focus moves into its panel | flow | automated | `components/Tabs.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| TAB-006 | [Window tabs][Accessibility] Render the tabs -> labelled tab list, tabs with their selected state, panels labelled by their tab | component | automated | `components/Tabs.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| TAB-007 | [Window tabs][Accessibility] Move through the tabs with VoiceOver on -> each announced as a tab with its name, selected state and position | manual | manual | `components/Tabs.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | [TAB-007](cases/tab/TAB-007-voiceover.md) |
+| TAB-008 | [Window tabs][Input kept] Type or toggle on a tab, switch away and back -> the input is still there and still works | component | automated | `components/Tabs.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| TAB-009 | [Window tabs][Not persisted] Switch tabs, then reload the page -> no command reaches the core, and the page starts on Settings | component, flow | automated | `components/Tabs.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| TAB-010 | [Window tabs][Shared] Select a tab other than Settings -> heading, hide button and its explanation still visible | component | automated | `App.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| TAB-011 | [Window tabs][Layout] Select each tab in a 360 px window -> no page overflow, every control within the window | flow | automated | `App.css` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| TAB-012 | [Window tabs][Accessibility] Select each tab -> axe finds no violations | component | automated | `App.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| TAB-013 | [Window tabs][Appearance] Open each tab in Light and Dark appearance -> colours follow, text readable, matches the approved screenshots | flow, manual | partial | `App.css` | [Window tabs](../docs/features/09-window-tabs.md) | [TAB-013](cases/tab/TAB-013-appearance.md) |
+| TAB-014 | [Window tabs][Built app] Open the window -> four tabs in order, Settings selected, each tab shows its own panel | e2e | automated | `components/Tabs.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | [TAB-014](cases/tab/TAB-014-built-app-tabs.md) |
+| TAB-015 | [Window tabs][Built app] Visit GitHub jobs, return to Settings, toggle launch at login -> the setting is persisted | e2e | automated | `views/SettingsView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | [TAB-015](cases/tab/TAB-015-built-app-launch-at-login.md) |
+
+## Settings previews — `SET`
+
+Feature: [Window tabs](../docs/features/09-window-tabs.md). Launch at login itself is covered by the
+`LOGIN` and `UI` cases.
+
+| ID | Case | Levels | Status | Module | Feature | File |
+|---|---|---|---|---|---|---|
+| SET-001 | [Settings previews][Sections] Open the Settings tab -> Jira, QA Portal, Sync schedule, Timesheet and GitHub sections, each with its fields | component | automated | `views/SettingsView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| SET-002 | [Settings previews][Editable] Type, choose or select in each preview field -> the field takes the input | component | automated | `views/SettingsView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| SET-003 | [Settings previews][Not saved] Fill in credentials and edit projects -> no command reaches the core | component | automated | `views/SettingsView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| SET-004 | [Settings previews][Secrets] Type into the API token, passwords or GitHub token -> masked, no autofill | component | automated | `views/SettingsView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| SET-005 | [Settings previews][Projects] Add, edit and remove timesheet projects -> new rows default to 8 hours, 0–24 in steps of 0.5, the list may be empty | component | automated | `views/SettingsView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| SET-006 | [Settings previews][Submission] Open the Timesheet section -> weekday (default Friday), time (default 17:00) and automatic-or-reminder choice | component | automated | `views/SettingsView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| SET-007 | [Settings previews][Marking] Show an unfinished section or sample data -> marked in words ("Not wired yet", a notice), not only by colour | component | automated | `components/NotWired.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| SET-008 | [Settings previews][Actions] Show an action that is not built -> a disabled button whose description says why | component | automated | `components/NotWired.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| SET-009 | [Settings previews][Accessibility] Render the Settings tab, with projects and with none -> axe finds no violations | component | automated | `views/SettingsView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+
+## QA Portal sync — `SYNC`
+
+Feature: [Window tabs](../docs/features/09-window-tabs.md). The tab shows sample data until the sync
+exists.
+
+| ID | Case | Levels | Status | Module | Feature | File |
+|---|---|---|---|---|---|---|
+| SYNC-001 | [QA Portal sync][Totals] Show the counts table -> each row's Total is the sum of its counts and the Total row is the column sums | unit, component | automated | `views/SyncView.tsx + views/totals.ts` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| SYNC-002 | [QA Portal sync][Delta] A count changed since the previous sync -> the cell shows the signed change; unchanged counts show none | unit, component | automated | `views/SyncView.tsx + views/totals.ts` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| SYNC-003 | [QA Portal sync][Sample data] Open the tab -> a notice says the data is sample and the sync is not wired yet | component | automated | `views/SyncView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| SYNC-004 | [QA Portal sync][Timing] Show the last and next sync -> weekday, day, month and 24-hour time | unit | automated | `views/format.ts` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| SYNC-005 | [QA Portal sync][Status] Open the tab -> status, last sync with its outcome, next sync; Never and Not scheduled when absent | component | automated | `views/SyncView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| SYNC-006 | [QA Portal sync][Run] Open the tab -> Run now disabled with its reason, Dry run offered | component | automated | `views/SyncView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| SYNC-007 | [QA Portal sync][Steps] Show the last run -> Jira, Group, Portal login, Update, Verify in order, each with its outcome in words | component | automated | `views/SyncView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| SYNC-008 | [QA Portal sync][Skipped] The last sync skipped tickets of an unknown platform -> a warning with the count; none when zero | component | automated | `views/SyncView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| SYNC-009 | [QA Portal sync][Report] Open the tab -> read-only report text, a period choice, Generate and Copy disabled with their reasons | component | automated | `views/SyncView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| SYNC-010 | [QA Portal sync][Accessibility] Render the tab -> axe finds no violations | component | automated | `views/SyncView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+
+## Timesheet — `TIME`
+
+Feature: [Window tabs](../docs/features/09-window-tabs.md). The tab shows sample data until time entry
+exists.
+
+| ID | Case | Levels | Status | Module | Feature | File |
+|---|---|---|---|---|---|---|
+| TIME-001 | [Timesheet][Totals] Template of 8 and 0.5 hours a day -> each project's Total is its five days (40, 2.5), each day's Total is its projects (8.5) | unit, component | automated | `views/TimesheetView.tsx + views/totals.ts` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| TIME-002 | [Timesheet][Week] Show the week -> Monday to Friday dates of the current week, across month ends | unit, component | automated | `views/TimesheetView.tsx + views/format.ts` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| TIME-003 | [Timesheet][Sample data] Open the tab -> a notice says the data is sample and time entry is not wired yet | component | automated | `views/TimesheetView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| TIME-004 | [Timesheet][Empty] The template has no projects -> a message says none are configured, no grid | component | automated | `views/TimesheetView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| TIME-005 | [Timesheet][Status] Open the tab -> Draft or Submitted, and the next submission's weekday and time | component | automated | `views/TimesheetView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| TIME-006 | [Timesheet][Submit] Open the tab -> Submit disabled, described as not wired yet | component | automated | `views/TimesheetView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| TIME-007 | [Timesheet][Accessibility] Render the tab, with projects and without -> axe finds no violations | component | automated | `views/TimesheetView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+
+## GitHub jobs — `GH`
+
+Feature: [Window tabs](../docs/features/09-window-tabs.md). Branches and devices are sample data until
+dispatch exists; the selection rules are real.
+
+| ID | Case | Levels | Status | Module | Feature | File |
+|---|---|---|---|---|---|---|
+| GH-001 | [GitHub jobs][Platforms] List the platforms -> Android mobile, iOS mobile, Android TV, Fire TV, Apple TV, Samsung, LG, each with a unique id | unit | automated | `domain/platforms.ts` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-002 | [GitHub jobs][Defaults] Open the tab -> default branch, Release off, every checkbox off, no device selected | unit | automated | `views/github/selection.ts` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-003 | [GitHub jobs][Columns] Check Prod env and Dev mode on one platform -> both stay checked, each unchecks alone | unit | automated | `views/github/selection.ts` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-004 | [GitHub jobs][Run off] Uncheck then recheck Run on a configured platform -> its Prod env, Dev mode and devices come back | unit | automated | `views/github/selection.ts` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-005 | [GitHub jobs][Run off] Change Prod env, Dev mode or a device while Run is off -> nothing changes | unit | automated | `views/github/selection.ts` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-006 | [GitHub jobs][Devices] Click devices -> any number selects, a second click deselects, other platforms untouched | unit | automated | `views/github/selection.ts` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-007 | [GitHub jobs][Dispatch] Read the selection to dispatch -> Run-on platforms only, in platform order, no devices meaning build only | unit | automated | `views/github/selection.ts` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-008 | [GitHub jobs][All] Use the Run All checkbox -> off, mixed and on read correctly; off or mixed checks all, on unchecks all | unit | automated | `views/github/selection.ts` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-009 | [GitHub jobs][All] Use the Prod env or Dev mode All -> counts and changes Run-on platforms only, disabled when none runs | unit | automated | `views/github/selection.ts` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-010 | [GitHub jobs][Branch] Change the branch, and go back -> everything, Release included, is at its default each time | unit | automated | `views/github/selection.ts` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-011 | [GitHub jobs][Summary] Select jobs and devices -> the Run button reads "Run 2 jobs, deploy to 3 devices", with singular, no-deployment and nothing-selected forms | unit | automated | `views/github/selection.ts` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-012 | [GitHub jobs][Release] Check Release -> no other control changes | unit | automated | `views/github/selection.ts` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-013 | [GitHub jobs][Sample data] Open the tab -> a notice says branches and devices are sample data and starting jobs is not wired yet | component | automated | `views/GitHubJobsView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-014 | [GitHub jobs][Defaults] Open the tab -> default branch, All row then seven platform rows, Run enabled and off, Prod env, Dev mode, devices and their All disabled | component | automated | `views/GitHubJobsView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-015 | [GitHub jobs][Run off] Turn Run off on a configured platform -> its controls are disabled but keep their values, which return when Run is back on | component | automated | `views/GitHubJobsView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-016 | [GitHub jobs][All] Check Run on some platforms -> Run All shows mixed; Prod env All checks only those platforms | component | automated | `views/GitHubJobsView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-017 | [GitHub jobs][Devices] Click devices -> each selected one shows a check mark and a pressed state; a second click releases it | component | automated | `views/GitHubJobsView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-018 | [GitHub jobs][Branch] Pick another branch, then the first again -> Release, checkboxes and devices are back to their defaults each time | component | automated | `views/GitHubJobsView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-019 | [GitHub jobs][Release] Check Release -> its description says Android goes to Play Console; nothing else changes or is disabled | component | automated | `views/GitHubJobsView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-020 | [GitHub jobs][Summary] Select platforms and devices -> the Run button reads the jobs and devices, and stays disabled with its reason | component | automated | `views/GitHubJobsView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-021 | [GitHub jobs][Kept] Make a selection, visit another tab and return -> the selection is still there | component | automated | `views/GitHubJobsView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-022 | [GitHub jobs][Accessibility] Render the tab, empty and with a selection -> axe finds no violations | component | automated | `views/GitHubJobsView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
+| GH-023 | [GitHub jobs][Flow] In WebKit, choose platforms and devices by mouse and keyboard, then change the branch -> the label follows, the branch change resets, nothing reaches the core | flow | automated | `views/GitHubJobsView.tsx` | [Window tabs](../docs/features/09-window-tabs.md) | — |
 
 ## System — `SYS`
 

@@ -7,6 +7,7 @@
  * manual case (UI-006); appearance is covered by the UI flows' screenshots.
  */
 import { render, screen, waitFor } from '@testing-library/react'
+import userEvent from '@testing-library/user-event'
 import axe from 'axe-core'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import App from './App'
@@ -59,6 +60,19 @@ describe('accessibility', () => {
     const second = render(<App />)
     await screen.findByRole('status')
     expect(await violations(second.container)).toEqual([])
+  })
+
+  it('[TAB-012] has no axe violations with each tab selected', async () => {
+    vi.mocked(getAutostartEnabled).mockResolvedValue(false)
+    vi.mocked(getTrayAvailable).mockResolvedValue(true)
+    const { container } = render(<App />)
+    await waitFor(() => expect(toggle()).toBeEnabled())
+
+    for (const tab of screen.getAllByRole('tab')) {
+      await userEvent.click(tab)
+      expect(tab).toHaveAttribute('aria-selected', 'true')
+      expect(await violations(container)).toEqual([])
+    }
   })
 
   it('[UI-006] exposes the toggle as a switch named "Launch at login" with its state', async () => {

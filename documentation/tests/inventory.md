@@ -10,11 +10,11 @@ with no case is a helper-level check that does not map to a catalogued behaviour
 |---|---|---|
 | unit (Rust) | 56 | 54 |
 | integration (Rust) | 18 | 18 |
-| component (vitest) | 25 | 24 |
-| flow (Playwright) | 10 | 10 |
-| e2e (WebdriverIO) | 41 | 41 |
+| component (vitest) | 109 | 108 |
+| flow (Playwright) | 17 | 17 |
+| e2e (WebdriverIO) | 43 | 43 |
 | release smoke (shell) | 7 | 6 |
-| **Total** | **157** | **153** |
+| **Total** | **250** | **246** |
 
 ## `src-tauri/src/config.rs`
 
@@ -140,6 +140,7 @@ component (vitest).
 |---|---|
 | `[UI-012] has no axe violations once loaded` | UI-012 |
 | `[UI-012] has no axe violations in the tray-unavailable and no-backend states` | UI-012 |
+| `[TAB-012] has no axe violations with each tab selected` | TAB-012 |
 | `[UI-006] exposes the toggle as a switch named "Launch at login" with its state` | UI-006 |
 
 ## `ui/src/App.test.tsx`
@@ -157,9 +158,47 @@ component (vitest).
 | `[UI-007] explains itself when there is no backend at all` | UI-007 |
 | `[UI-010] stays disabled while a save is in flight` | UI-010 |
 | `[UI-011] clears a previous error after a successful toggle` | UI-011 |
+| `[TAB-001] offers Settings, QA Portal sync, Timesheet and GitHub jobs, in that order` | TAB-001 |
+| `[TAB-002] opens on Settings, with launch at login visible without a click` | TAB-002 |
+| `[TAB-003] shows the selected tab\` | TAB-003 |
+| `[TAB-009] sends nothing to the core when switching tabs` | TAB-009 |
+| `[TAB-010] keeps the heading and the hide footer on every tab` | TAB-010 |
+| `[TAB-008] keeps launch at login working after visiting another tab` | TAB-008 |
 | `[UI-001] offers a hide button and explains how to quit` | UI-001 |
 | `[HIDE-008] asks the backend to hide the window when the hide button is clicked` | HIDE-008 |
 | `[TRAY-010] warns that closing quits when the tray could not be created` | TRAY-010 |
+
+## `ui/src/components/NotWired.test.tsx`
+
+component (vitest).
+
+| Test | Cases |
+|---|---|
+| `[SET-007] marks a section in words, not only by colour` | SET-007 |
+| `[SET-007] shows a sample-data notice as visible text` | SET-007 |
+| `[SET-008] renders a pending action as a disabled button described by its reason` | SET-008 |
+
+## `ui/src/components/Tabs.test.tsx`
+
+component (vitest).
+
+| Test | Cases |
+|---|---|
+| `[TAB-006] exposes a labelled tab list, tabs with their selected state, and panels labelled by their tab` | TAB-006 |
+| `[TAB-003] shows only the selected panel, and a click selects another` | TAB-003 |
+| `[TAB-004] moves with the arrow keys, wrapping at both ends, and focuses what it selects` | TAB-004 |
+| `[TAB-004] jumps to the first and last tab with Home and End` | TAB-004 |
+| `[TAB-004] ignores other keys and keeps only the selected tab in the Tab order` | TAB-004 |
+| `[TAB-008] keeps hidden panels mounted, so typed input survives a switch` | TAB-008 |
+
+## `ui/src/domain/platforms.test.ts`
+
+component (vitest).
+
+| Test | Cases |
+|---|---|
+| `[GH-001] lists the seven platforms in display order` | GH-001 |
+| `[GH-001] gives each platform a unique id` | GH-001 |
 
 ## `ui/src/lib/ipc.contract.test.ts`
 
@@ -185,6 +224,121 @@ component (vitest).
 | `[IPC-001] reads tray availability` | IPC-001 |
 | `[IPC-001] calls the window commands by their registered names` | IPC-001 |
 
+## `ui/src/views/format.test.ts`
+
+component (vitest).
+
+| Test | Cases |
+|---|---|
+| `[SYNC-004] shows a date-time as weekday, day, month and 24-hour time` | SYNC-004 |
+| `[TIME-002] lists Monday to Friday of a week, across a month end` | TIME-002 |
+
+## `ui/src/views/github/selection.test.ts`
+
+component (vitest).
+
+| Test | Cases |
+|---|---|
+| `[GH-002] starts with every checkbox off, no devices and Release off` | GH-002 |
+| `[GH-003] keeps Prod env and Dev mode independent of each other` | GH-003 |
+| `[GH-004] keeps a platform\` | GH-004 |
+| `[GH-005] ignores Prod env, Dev mode and device changes while Run is off` | GH-005 |
+| `[GH-006] toggles any number of devices, from none to all, and deselects on a second click` | GH-006 |
+| `[GH-006] leaves other platforms untouched when one changes` | GH-006 |
+| `[GH-007] includes only Run-on platforms and ignores the kept values of the others` | GH-007 |
+| `[GH-007] dispatches a Run-on platform with no devices as build only` | GH-007 |
+| `[GH-007] lists jobs in platform order, whatever order they were chosen in` | GH-007 |
+| `[GH-008] reads off, mixed and on for Run` | GH-008 |
+| `[GH-008] checks every platform from off or mixed, and unchecks them all from on` | GH-008 |
+| `[GH-009] Prod env and Dev mode All count and change only Run-on platforms` | GH-009 |
+| `[GH-009] a kept Prod env value on a Run-off platform does not count towards All` | GH-009 |
+| `[GH-009] Prod env and Dev mode All are disabled when no platform runs` | GH-009 |
+| `[GH-010] resets everything, Release included, when the branch changes` | GH-010 |
+| `[GH-010] remembers nothing per branch: going back gives the defaults` | GH-010 |
+| `[GH-012] Release changes no other value` | GH-012 |
+| `[GH-011] counts jobs and devices across Run-on platforms` | GH-011 |
+| `[GH-011] uses singular forms, says when nothing deploys, and when nothing is selected` | GH-011 |
+
+## `ui/src/views/GitHubJobsView.test.tsx`
+
+component (vitest).
+
+| Test | Cases |
+|---|---|
+| `[GH-013] says branches and devices are sample data and that starting jobs is not wired yet` | GH-013 |
+| `[GH-014] starts on the default branch with every control off and Run the only enabled column` | GH-014 |
+| `[GH-015] disables a platform\` | GH-015 |
+| `[GH-016] shows a mixed All, and Prod env All changes only Run-on platforms` | GH-016 |
+| `[GH-017] marks a selected device with a check and a pressed state, any number of them` | GH-017 |
+| `[GH-018] resets everything, Release included, when the branch changes, and restores nothing on return` | GH-018 |
+| `[GH-019] describes Release as applying to all platforms, and checking it changes nothing else` | GH-019 |
+| `[GH-020] labels the Run button with jobs and devices, and keeps it disabled with its reason` | GH-020 |
+| `[GH-021] keeps the selection while the user visits another tab` | GH-021 |
+| `[GH-022] has no axe violations, with nothing selected and with a selection` | GH-022 |
+
+## `ui/src/views/SettingsView.test.tsx`
+
+component (vitest).
+
+| Test | Cases |
+|---|---|
+| `[SET-001] shows Jira, QA Portal, Sync schedule, Timesheet and GitHub, each with its fields` | SET-001 |
+| `[SET-002] accepts input in every preview field` | SET-002 |
+| `[SET-004] masks every secret and offers no autofill for it` | SET-004 |
+| `[SET-006] offers the submission weekday, time and mode, defaulting to Friday 17:00, automatic` | SET-006 |
+| `[SET-005] starts from the sample projects, and a new row has no name and 8 hours` | SET-005 |
+| `[SET-005] accepts 0 to 24 hours in steps of 0.5, more than 8 without a warning` | SET-005 |
+| `[SET-005] removes rows down to none, and Add project still works` | SET-005 |
+| `[SET-005] keeps each remaining row\` | SET-005 |
+| `[SET-007] badges every preview section, and not the launch-at-login row` | SET-007 |
+| `[SET-008] disables Test connection and says the connection is not wired yet` | SET-008 |
+| `[SET-009] has no axe violations, with projects and without` | SET-009 |
+| `[SET-003] sends nothing to the core while the user fills in credentials` | SET-003 |
+| `[TAB-008] keeps a typed value after switching to another tab and back` | TAB-008 |
+
+## `ui/src/views/SyncView.test.tsx`
+
+component (vitest).
+
+| Test | Cases |
+|---|---|
+| `[SYNC-003] says it shows sample data and that the sync is not wired yet` | SYNC-003 |
+| `[SYNC-005] shows the status, the last sync with its outcome, and the next sync` | SYNC-005 |
+| `[SYNC-005] says Never and Not scheduled when there was no sync and none is planned` | SYNC-005 |
+| `[SYNC-006] shows Run now disabled with its reason, and a Dry run option` | SYNC-006 |
+| `[SYNC-007] lists the five steps in order, each with its outcome in words` | SYNC-007 |
+| `[SYNC-001] has a row per platform in platform order, then a Total row` | SYNC-001 |
+| `[SYNC-001] totals each row, each column and the whole table` | SYNC-001 |
+| `[SYNC-002] shows a signed delta where a count moved, and none where it did not` | SYNC-002 |
+| `[SYNC-008] warns how many tickets were skipped for an unknown platform` | SYNC-008 |
+| `[SYNC-009] shows the report read-only, with a period choice and Generate and Copy disabled` | SYNC-009 |
+| `[SYNC-010] has no axe violations` | SYNC-010 |
+
+## `ui/src/views/TimesheetView.test.tsx`
+
+component (vitest).
+
+| Test | Cases |
+|---|---|
+| `[TIME-003] says it shows sample data and that time entry is not wired yet` | TIME-003 |
+| `[TIME-002] heads the week with its dates and has a column per weekday` | TIME-002 |
+| `[TIME-001] applies 8 and 0.5 hours a day: projects total 40 and 2.5, each day 8.5` | TIME-001 |
+| `[TIME-004] says no projects are configured, and shows no grid, when the template is empty` | TIME-004 |
+| `[TIME-005] shows the week as a draft with the next submission\` | TIME-005 |
+| `[TIME-006] shows Submit disabled, described as not wired yet` | TIME-006 |
+| `[TIME-007] has no axe violations, with projects and without` | TIME-007 |
+
+## `ui/src/views/totals.test.ts`
+
+component (vitest).
+
+| Test | Cases |
+|---|---|
+| `[SYNC-001, TIME-001] sums a row` | SYNC-001, TIME-001 |
+| `[SYNC-001, TIME-001] sums each column, and gives zeros for an empty table` | SYNC-001, TIME-001 |
+| `[SYNC-002] reports a rise and a fall as signed deltas` | SYNC-002 |
+| `[SYNC-002] shows no delta when the count is unchanged or has no previous value` | SYNC-002 |
+
 ## `ui/flows/appearance.flow.ts`
 
 flow (Playwright).
@@ -193,6 +347,8 @@ flow (Playwright).
 |---|---|
 | `[UI-003] matches the approved light-appearance screenshots, switch off and on` | UI-003 |
 | `[UI-003] matches the approved dark-appearance screenshots, switch off and on` | UI-003 |
+| `[TAB-013] matches the approved light-appearance screenshots of every other tab` | TAB-013 |
+| `[TAB-013] matches the approved dark-appearance screenshots of every other tab` | TAB-013 |
 
 ## `ui/flows/no-backend.flow.ts`
 
@@ -215,6 +371,18 @@ flow (Playwright).
 | `[UI-009] reverts the switch and shows the message when registration fails` | UI-009 |
 | `[TRAY-010] warns that closing quits, and offers no hide button, when there is no tray` | TRAY-010 |
 | `[HIDE-008] asks the backend to hide when the hide button is clicked` | HIDE-008 |
+
+## `ui/flows/tabs.flow.ts`
+
+flow (Playwright).
+
+| Test | Cases |
+|---|---|
+| `[TAB-004] moves between tabs with the arrow keys, wrapping, and with Home and End` | TAB-004 |
+| `[TAB-005] Tab moves focus from the selected tab into its panel` | TAB-005 |
+| `[TAB-009] starts on Settings again after a reload, and switching tabs calls nothing` | TAB-009 |
+| `[TAB-011] fits a 360 px wide window on every tab with no page overflow` | TAB-011 |
+| `[GH-023] chooses platforms and devices with mouse and keyboard, and a branch change resets them` | GH-023 |
 
 ## `e2e/specs/config.e2e.ts`
 
@@ -299,6 +467,15 @@ e2e (WebdriverIO).
 | `[INST-003] open -a while visible -> the existing window comes forward, no second window` | INST-003 |
 | `[INST-005] Run the binary directly while an instance runs -> the second exits, the first reveals its window` | INST-005 |
 | `[INST-006] Relaunch 5 times quickly -> still one window and one tray icon` | INST-006 |
+
+## `e2e/specs/tabs.e2e.ts`
+
+e2e (WebdriverIO).
+
+| Test | Cases |
+|---|---|
+| `[TAB-014] Open the window -> four tabs in order, Settings selected, each tab shows its own panel` | TAB-014 |
+| `[TAB-015] Visit GitHub jobs, return to Settings, toggle launch at login -> the setting is persisted` | TAB-015 |
 
 ## `e2e/specs/tray.e2e.ts`
 

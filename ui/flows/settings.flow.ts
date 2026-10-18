@@ -45,7 +45,11 @@ test('[UI-005] toggles from the keyboard, and the backend receives the change', 
   // WebKit on macOS only stops on checkboxes and buttons with plain Tab when System Settings →
   // Keyboard → "Keyboard navigation" is on; Option-Tab reaches every control regardless. The app's
   // WKWebView behaves the same way.
-  await page.keyboard.press(process.platform === 'darwin' ? 'Alt+Tab' : 'Tab')
+  const tabKey = process.platform === 'darwin' ? 'Alt+Tab' : 'Tab'
+  // The selected tab comes first in the Tab order, then its panel: Settings, then the switch.
+  await page.keyboard.press(tabKey)
+  await expect(page.getByRole('tab', { name: 'Settings' })).toBeFocused()
+  await page.keyboard.press(tabKey)
   await expect(launchAtLogin(page)).toBeFocused()
   await page.keyboard.press('Space')
 

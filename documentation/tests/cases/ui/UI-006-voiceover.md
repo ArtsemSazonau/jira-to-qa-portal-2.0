@@ -4,7 +4,7 @@
 |---|---|
 | Status | `partial` |
 | Levels | component, manual |
-| Module | [`App.tsx`](../../../../ui/src/App.tsx) |
+| Module | [`views/SettingsView.tsx`](../../../../ui/src/views/SettingsView.tsx) |
 | Feature | [Settings UI](../../../docs/features/08-settings-ui.md) |
 
 ## Purpose
@@ -54,6 +54,6 @@ The role (`switch`), the accessible name and the checked state are asserted in j
 ## Related
 
 - Feature: [Settings UI](../../../docs/features/08-settings-ui.md)
-- Module: [`ui/src/App.tsx`](../../../../ui/src/App.tsx)
+- Module: [`ui/src/views/SettingsView.tsx`](../../../../ui/src/views/SettingsView.tsx)
 - Catalog: [UI-006](../../catalog.md)
 - Former checklist ID: U6

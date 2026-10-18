@@ -46,7 +46,7 @@ The panel must stay usable at small window widths.
 
 ## Manual remainder
 
-The flow asserts no horizontal overflow at 360 px in WebKit. Dragging the real window narrower still is checked by hand.
+The flow asserts no horizontal overflow at 360 px in WebKit, on the Settings tab here and on every tab in [TAB-011](../../catalog.md). Dragging the real window narrower still is checked by hand.
 
 ## Related
 
