@@ -64,4 +64,4 @@ real window following a live appearance switch.
 - Feature: [Window tabs](../../../docs/features/09-window-tabs.md)
 - Module: [`ui/src/App.css`](../../../../ui/src/App.css)
 - Catalog: [TAB-013](../../catalog.md)
-- Change: [add-window-tabs](../../../../openspec/changes/add-window-tabs/proposal.md)
+- Change: [add-window-tabs](../../../../openspec/changes/archive/2026-10-18-add-window-tabs/proposal.md)
