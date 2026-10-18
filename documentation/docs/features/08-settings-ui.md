@@ -1,7 +1,8 @@
 # 8. Settings UI
 
-The app window. One setting today — launch at login — plus the affordances that make hide-to-tray
-discoverable.
+The launch-at-login setting and the affordances that make hide-to-tray discoverable. Since
+[window tabs](09-window-tabs.md), the window has four tabs: the launch-at-login row is the first entry
+of the **Settings** tab, and the heading, notices and hide footer belong to the shell around the tabs.
 
 This replaced the stock Vite demo (hero images, counter, framework links) outright rather than
 grafting a control into it, so the window is a real settings panel from the first feature.
@@ -91,11 +92,13 @@ Added with this feature; there was no frontend test infrastructure before.
 `tsconfig.app.json` already includes `src`, so the test files are type-checked by `tsc -b` during
 `npm run build` — a broken test is a broken build, not a surprise later.
 
-## Extending it
+## Where it lives now
 
-PLAN.md §3 plans `views/Settings.tsx`, `Schedule.tsx`, `SyncStatus.tsx` and `Report.tsx`. When the
-second view arrives, this panel's body becomes `views/Settings.tsx` and `App.tsx` becomes the shell
-that routes between them. The `lib/ipc.ts` boundary stays exactly as it is.
+The panel this page describes was split when the tabs arrived: the launch-at-login row is in
+`views/SettingsView.tsx`, and `App.tsx` became the shell that loads the backend state, owns saving
+and the notices, and hands the toggle to the Settings tab. The states and the `lib/ipc.ts` boundary
+below are unchanged. Tabs, the preview sections and their conventions are in
+[09-window-tabs.md](09-window-tabs.md).
 
 ## Tests
 

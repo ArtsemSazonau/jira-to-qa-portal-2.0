@@ -1,4 +1,4 @@
-# UI-001 — [Settings UI][Layout] Open the window -> heading, subtitle, Launch at login row, hide button and its explanation
+# UI-001 — [Settings UI][Layout] Open the window -> heading, subtitle, tabs, Launch at login row on the Settings tab, hide button and its explanation
 
 | | |
 |---|---|
@@ -37,7 +37,8 @@ Everything the window offers is visible on open.
 ## Expected result
 
 - Heading *QA Portal Sync* and the subtitle.
-- The **Launch at login** row with its hint and switch.
+- The tabs **Settings**, **QA Portal sync**, **Timesheet** and **GitHub jobs**, with Settings selected.
+- On the Settings tab, the **Launch at login** row with its hint and switch.
 - The **Hide to menu bar** button with the hint mentioning ⌘Q.
 
 ## Automated by

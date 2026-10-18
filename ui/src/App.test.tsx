@@ -155,6 +155,83 @@ describe('launch-at-login toggle', () => {
   })
 })
 
+describe('tabs', () => {
+  const tab = (name: string) => screen.getByRole('tab', { name })
+
+  it('[TAB-001] offers Settings, QA Portal sync, Timesheet and GitHub jobs, in that order', async () => {
+    backend()
+    render(<App />)
+    await waitFor(() => expect(toggle()).toBeEnabled())
+
+    expect(screen.getAllByRole('tab').map((t) => t.textContent)).toEqual([
+      'Settings',
+      'QA Portal sync',
+      'Timesheet',
+      'GitHub jobs',
+    ])
+  })
+
+  it('[TAB-002] opens on Settings, with launch at login visible without a click', async () => {
+    backend()
+    render(<App />)
+    await waitFor(() => expect(toggle()).toBeEnabled())
+
+    expect(tab('Settings')).toHaveAttribute('aria-selected', 'true')
+    expect(toggle()).toBeVisible()
+  })
+
+  it('[TAB-003] shows the selected tab\'s panel only', async () => {
+    backend()
+    render(<App />)
+    await waitFor(() => expect(toggle()).toBeEnabled())
+
+    await userEvent.click(tab('Timesheet'))
+
+    expect(tab('Timesheet')).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tabpanel')).toHaveAccessibleName('Timesheet')
+    expect(screen.getByRole('switch', { name: /launch at login/i, hidden: true })).not.toBeVisible()
+  })
+
+  it('[TAB-009] sends nothing to the core when switching tabs', async () => {
+    backend()
+    render(<App />)
+    await waitFor(() => expect(toggle()).toBeEnabled())
+    vi.clearAllMocks()
+
+    for (const name of ['QA Portal sync', 'Timesheet', 'GitHub jobs', 'Settings']) {
+      await userEvent.click(tab(name))
+    }
+
+    for (const fn of Object.values(mocked)) expect(fn).not.toHaveBeenCalled()
+  })
+
+  it('[TAB-010] keeps the heading and the hide footer on every tab', async () => {
+    backend({ tray: true })
+    render(<App />)
+    await waitFor(() => expect(toggle()).toBeEnabled())
+
+    await userEvent.click(tab('GitHub jobs'))
+
+    expect(screen.getByRole('heading', { level: 1, name: 'QA Portal Sync' })).toBeVisible()
+    expect(screen.getByRole('button', { name: /hide to menu bar/i })).toBeVisible()
+    expect(screen.getByText(/⌘Q/)).toBeVisible()
+  })
+
+  it('[TAB-008] keeps launch at login working after visiting another tab', async () => {
+    backend({ autostart: false })
+    render(<App />)
+    await waitFor(() => expect(toggle()).toBeEnabled())
+
+    await userEvent.click(tab('GitHub jobs'))
+    await userEvent.click(tab('Settings'))
+    mocked.getAutostartEnabled.mockResolvedValue(true)
+    await userEvent.click(toggle())
+
+    expect(mocked.setAutostartEnabled).toHaveBeenCalledExactlyOnceWith(true)
+    await waitFor(() => expect(toggle()).toBeChecked())
+  })
+})
+
 describe('hide-to-tray affordances', () => {
   it('[UI-001] offers a hide button and explains how to quit', async () => {
     backend({ tray: true })

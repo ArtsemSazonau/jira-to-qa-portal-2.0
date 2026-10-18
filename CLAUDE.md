@@ -4,12 +4,15 @@ Desktop app that syncs Jira issues into a QA Portal (Quality Tracker), with a UI
 work hours into the internal time tracker. Goals and their order: [PLAN.md §1](PLAN.md).
 
 **What exists:** the macOS app lifecycle — tray icon, hide-to-tray, launch at login, single
-instance — plus the Rust/UI module skeleton it establishes, and a test pyramid over it: unit,
+instance — plus the Rust/UI module skeleton it establishes; a window with four tabs (Settings, and
+previews of the QA Portal sync, the weekly timesheet and the project CI jobs on sample data —
+[09-window-tabs.md](documentation/docs/features/09-window-tabs.md)); and a test pyramid over it: unit,
 component, UI-flow and end-to-end layers, one command per stage, and a test-case catalog
 ([documentation/tests/README.md](documentation/tests/README.md)). **What does not:** the credentials
-window, Jira client, scheduler, sync and the `sidecar/` Playwright process, CI, time tracking and
-report generation. See [PLAN.md](PLAN.md) §4 for the backlog and
-[documentation/docs/overview.md](documentation/docs/overview.md) for what is built.
+window, Jira client, scheduler, sync and the `sidecar/` Playwright process, CI, time tracking,
+project CI dispatch and report generation — their tabs show previews only. See [PLAN.md](PLAN.md)
+§4 for the backlog and [documentation/docs/overview.md](documentation/docs/overview.md) for what is
+built.
 
 ## Running it
 
@@ -18,7 +21,7 @@ npm install          # root devDependencies: @tauri-apps/cli, lefthook (installs
 npm --prefix ui install
 npm run tauri dev    # launches Vite (ui/, port 1420) + the Tauri window
 
-npm run test:fast    # 74 Rust + 25 UI tests, clippy, ui build, oxlint, 10 UI flows, catalog check
+npm run test:fast    # 74 Rust + 109 UI tests, clippy, ui build, oxlint, 17 UI flows, catalog check
 ```
 
 `npm run test:fast` is the whole suite that needs no built app, and the pre-push hook runs it. Use it
@@ -92,7 +95,7 @@ Stack and status (rationale in PLAN.md §2–3). Status is one of done / MVP / d
 | Layer | Tech | Role | Status |
 |---|---|---|---|
 | Core/shell | Tauri (Rust) | app lifecycle, tray, scheduler, IPC | done (lifecycle + tray) |
-| UI | Vite + React | settings, credentials, schedule, sync status, timesheet calendar, report views | done (settings panel) |
+| UI | Vite + React | settings, credentials, schedule, sync status, weekly timesheet, project CI jobs, report views | done (four tabs; all but launch at login are previews on sample data) |
 | Autostart | `tauri-plugin-autostart` (`MacosLauncher::LaunchAgent`) | launch at login | done |
 | App config (non-secret) | plain serde struct → JSON (**deviation**, see below) | schedule, mappings, chosen LLM provider | done (lifecycle flags) |
 | Credentials window | `keyring-rs` → OS keychain, edited from a UI view | Jira token + cloudId, QA Portal login, time tracker login, LLM key | MVP |
@@ -101,7 +104,8 @@ Stack and status (rationale in PLAN.md §2–3). Status is one of done / MVP / d
 | Scheduler | `tokio-cron-scheduler` (Rust) | configurable cron/interval sync | MVP |
 | Tests | `cargo test` + `proptest`; vitest + Testing Library + `axe-core`; Playwright (WebKit, mocked IPC) for UI flows; WebdriverIO + `tauri-plugin-wdio-webdriver` + Appium Mac2 for e2e | fast suite, regression, release smoke; test-case catalog | done |
 | CI | GitHub Actions + `tauri-action` | tests on every push, bundle builds | MVP |
-| Time tracker | API (`reqwest`) or Playwright via the sidecar — undecided (PLAN.md §5) | template hours, calendar review, submit | draft |
+| Time tracker | API (`reqwest`) or Playwright via the sidecar — undecided (PLAN.md §5) | weekly hours from a project template, submitted on a chosen weekday | draft |
+| Project CI jobs | `reqwest` → GitHub REST; dispatch method undecided (PLAN.md §5) | branch, platforms, env, mode, release and devices for the project's CI | draft |
 | LLM | Ollama (`localhost:11434`); Anthropic/OpenAI behind an `LLMProvider` trait | report generation | later |
 
 Design principle: heavy work (browser automation, LLM inference) lives in short-lived

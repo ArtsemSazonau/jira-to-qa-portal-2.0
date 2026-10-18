@@ -39,6 +39,7 @@ documentation/
 | 6 | [One-time notifications](docs/features/06-notifications.md) |
 | 7 | [App configuration](docs/features/07-app-config.md) |
 | 8 | [Settings UI](docs/features/08-settings-ui.md) |
+| 9 | [Window tabs](docs/features/09-window-tabs.md) |
 
 Each feature document covers behaviour, the decisions behind it, edge cases, where it is implemented
 and which tests cover it.

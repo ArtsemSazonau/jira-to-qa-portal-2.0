@@ -51,12 +51,15 @@ it is e2e.
 
 ### Component and contract tests
 
-`npm --prefix ui test` runs four files in jsdom:
+`npm --prefix ui test` runs these files in jsdom:
 
 | File | Covers |
 |---|---|
-| `ui/src/App.test.tsx` | the settings panel's states — loading, saving, errors, no backend, no tray — with `lib/ipc.ts` mocked, so each test asserts which wrapper the panel calls |
-| `ui/src/App.a11y.test.tsx` | `axe-core` over the rendered panel in each state, and the switch's role, name and checked state. `color-contrast` is off: jsdom has no layout, so contrast is left to the UI flows' screenshots |
+| `ui/src/App.test.tsx` | the shell: the launch-at-login states — loading, saving, errors, no backend, no tray — with `lib/ipc.ts` mocked, so each test asserts which wrapper the window calls; and the tabs — order, Settings first, the shared footer, no IPC on a switch |
+| `ui/src/App.a11y.test.tsx` | `axe-core` over the rendered window in each state and with each tab selected, and the switch's role, name and checked state. `color-contrast` is off: jsdom has no layout, so contrast is left to the UI flows' screenshots |
+| `ui/src/components/*.test.tsx` | the tab list on its own — roles, keys, hidden panels kept mounted — and the not-wired markers |
+| `ui/src/views/*View.test.tsx` | one file per tab: what it shows, what is disabled and why, edge cases through its data prop, and axe |
+| `ui/src/views/*.test.ts`, `ui/src/domain/*.test.ts` | the pure models with no rendering: the GitHub jobs selection rules (`github/selection.test.ts`), totals and deltas, date formatting, the platform list |
 | `ui/src/lib/ipc.test.ts` | each wrapper invokes its command name with the right arguments, and passes rejections through |
 | `ui/src/lib/ipc.contract.test.ts` | reads `src-tauri/src/lib.rs` and `ipc.ts` as text: the `generate_handler!` list and the names `ipc.ts` invokes must be the same set |
 
@@ -148,8 +151,8 @@ mock leak check fails if `ui/dist` contains the mock's marker strings anyway.
 Settings → Keyboard → *Keyboard navigation* is on; Option-Tab reaches every control regardless. The
 keyboard flow presses Option-Tab, and the real window behaves the same way.
 
-**Screenshot baselines.** `appearance.flow.ts` compares light and dark renders, switch off and on,
-against approved images in `ui/flows/appearance.flow.ts-snapshots/`, one set per platform
+**Screenshot baselines.** `appearance.flow.ts` compares light and dark renders — the Settings tab
+with the switch off and on, and each other tab — against approved images in `ui/flows/appearance.flow.ts-snapshots/`, one set per platform
 (`…-webkit-darwin.png`). The tolerance is tight — at most 100 differing pixels — because the page is
 mostly white and a layout shift changes only sparse text pixels; a 1% allowance let a heading grow
 from 28 to 40 px unnoticed. On a mismatch Playwright writes `-expected.png`, `-actual.png` and
@@ -391,12 +394,17 @@ Three stages, in order, against the bundle that ships:
 | `NOTE` | `[Notifications]` | [06-notifications.md](../docs/features/06-notifications.md) |
 | `CONF` | `[Config]` | [07-app-config.md](../docs/features/07-app-config.md) |
 | `UI` | `[Settings UI]` | [08-settings-ui.md](../docs/features/08-settings-ui.md) |
+| `TAB` | `[Window tabs]` | [09-window-tabs.md](../docs/features/09-window-tabs.md) |
+| `SET` | `[Settings previews]` | [09-window-tabs.md](../docs/features/09-window-tabs.md#settings-tab) |
+| `SYNC` | `[QA Portal sync]` | [09-window-tabs.md](../docs/features/09-window-tabs.md#qa-portal-sync-tab) |
+| `TIME` | `[Timesheet]` | [09-window-tabs.md](../docs/features/09-window-tabs.md#timesheet-tab) |
+| `GH` | `[GitHub jobs]` | [09-window-tabs.md](../docs/features/09-window-tabs.md#github-jobs-tab) |
 | `IPC` | `[IPC]` | [08-settings-ui.md](../docs/features/08-settings-ui.md#the-ipc-boundary) |
 | `SYS` | `[System]` | [overview.md](../docs/overview.md) |
 | `PERF` | `[Performance]` | [performance/README.md](performance/README.md) |
 
-Future areas follow the same pattern — `JIRA` `[Jira]` and `SYNC` `[Portal Sync]` arrive with the
-sync feature.
+Future areas follow the same pattern — `JIRA` `[Jira]` arrives with the sync feature, whose
+behaviour then joins the `SYNC` cases its tab already has.
 
 **Names** take the form `[Area][Feature] action -> expected result`, readable without opening the
 case file: `[OS tray][Menu] Right-click the icon -> the same menu opens`.

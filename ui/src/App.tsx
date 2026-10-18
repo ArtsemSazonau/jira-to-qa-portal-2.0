@@ -1,17 +1,26 @@
 import { useEffect, useState } from 'react'
+import { Tabs } from './components/Tabs'
 import {
   getAutostartEnabled,
   getTrayAvailable,
   hideMainWindow,
   setAutostartEnabled,
 } from './lib/ipc'
+import { GitHubJobsView } from './views/GitHubJobsView'
+import { SettingsView } from './views/SettingsView'
+import { SyncView } from './views/SyncView'
+import { TimesheetView } from './views/TimesheetView'
 import './App.css'
 
 type LoadState = 'loading' | 'ready' | 'unavailable'
 
 /**
- * The settings panel. One toggle for now; this is where the sync schedule,
- * credentials and platform mappings land as PLAN.md §4 works through the MVP.
+ * The window's shell: heading, the four tabs, and the notices and hide footer
+ * that apply whichever tab is selected.
+ *
+ * The shell owns the backend load — launch at login and tray availability are
+ * read together on mount — and hands the launch-at-login state to the Settings
+ * tab. The selected tab is on-screen state only (see components/Tabs.tsx).
  */
 function App() {
   const [loadState, setLoadState] = useState<LoadState>('loading')
@@ -63,8 +72,27 @@ function App() {
     }
   }
 
+  const tabs = [
+    {
+      id: 'settings',
+      label: 'Settings',
+      panel: (
+        <SettingsView
+          launchAtLogin={{
+            enabled: autostart,
+            disabled: loadState !== 'ready' || saving,
+            onToggle: (next) => void onToggle(next),
+          }}
+        />
+      ),
+    },
+    { id: 'sync', label: 'QA Portal sync', panel: <SyncView /> },
+    { id: 'timesheet', label: 'Timesheet', panel: <TimesheetView /> },
+    { id: 'github', label: 'GitHub jobs', panel: <GitHubJobsView /> },
+  ]
+
   return (
-    <main className="settings">
+    <main className="app">
       <header>
         <h1>QA Portal Sync</h1>
         <p className="subtitle">
@@ -72,26 +100,7 @@ function App() {
         </p>
       </header>
 
-      <section className="panel">
-        <div className="row">
-          <div className="row-text">
-            <label htmlFor="autostart">Launch at login</label>
-            <p className="hint">
-              Start automatically when you log in to macOS, hidden in the menu
-              bar.
-            </p>
-          </div>
-          <input
-            id="autostart"
-            type="checkbox"
-            role="switch"
-            className="switch"
-            checked={autostart}
-            disabled={loadState !== 'ready' || saving}
-            onChange={(event) => void onToggle(event.currentTarget.checked)}
-          />
-        </div>
-      </section>
+      <Tabs tabs={tabs} label="Sections" />
 
       {loadState === 'unavailable' && (
         <p className="notice" role="status">
