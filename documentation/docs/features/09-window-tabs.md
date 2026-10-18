@@ -6,8 +6,8 @@ features will need. The other three tabs are previews: they show sample data in 
 feature will fill, so wiring a feature replaces sample data rather than reshaping the window.
 
 Specified by the `app-window-navigation`, `settings-view`, `sync-status-view`, `timesheet-view` and
-`project-ci-jobs` capabilities of the
-[add-window-tabs](../../../openspec/changes/add-window-tabs/proposal.md) change.
+`project-ci-jobs` capabilities in [openspec/specs/](../../../openspec/specs/), introduced by the
+[add-window-tabs](../../../openspec/changes/archive/2026-10-18-add-window-tabs/proposal.md) change.
 
 ## The shell
 

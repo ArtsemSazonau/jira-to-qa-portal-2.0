@@ -53,4 +53,4 @@ the core after the user has been on another tab, and the change still lands in t
 - Feature: [Window tabs](../../../docs/features/09-window-tabs.md)
 - Module: [`ui/src/views/SettingsView.tsx`](../../../../ui/src/views/SettingsView.tsx)
 - Catalog: [TAB-015](../../catalog.md)
-- Change: [add-window-tabs](../../../../openspec/changes/add-window-tabs/proposal.md)
+- Change: [add-window-tabs](../../../../openspec/changes/archive/2026-10-18-add-window-tabs/proposal.md)
